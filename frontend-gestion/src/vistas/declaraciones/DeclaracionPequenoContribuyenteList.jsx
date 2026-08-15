@@ -8,12 +8,23 @@ const NOMBRES_MESES = [
 ];
 
 export default function DeclaracionPequenoContribuyenteList({ declaraciones = [] }) {
+  // Los hooks SIEMPRE deben ir adentro del componente
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('TODOS');
 
-  // Filtrar estrictamente las declaraciones de Pequeño Contribuyente
+  // Log para verificar qué declaraciones están llegando desde App.jsx
+  console.log("Declaraciones recibidas en el Reporte PC:", declaraciones);
+
+  // Filtrar declaraciones de Pequeño Contribuyente
   const declaracionesFiltradas = declaraciones.filter((d) => {
-    const esPC = d.tipoImpuesto === 'IVA_PEQUENO_CONTRIBUYENTE' || !d.tipoImpuesto;
+    const tipo = d.tipoImpuesto ? String(d.tipoImpuesto).toUpperCase() : '';
+    
+    // Verificación flexible del tipo de impuesto
+    const esPC = 
+      tipo.includes('PEQUENO') || 
+      tipo.includes('PC') || 
+      tipo === 'IVA_PEQUENO_CONTRIBUYENTE' || 
+      !d.tipoImpuesto; 
     
     if (!esPC) return false;
 
@@ -25,10 +36,17 @@ export default function DeclaracionPequenoContribuyenteList({ declaraciones = []
 
     const numFormulario = d.numeroFormularioSat || '';
     
-    const coincideTexto = nombreCliente.toLowerCase().includes(busqueda.toLowerCase()) || 
-                          numFormulario.toLowerCase().includes(busqueda.toLowerCase());
+    const coincideTexto = 
+      nombreCliente.toLowerCase().includes(busqueda.toLowerCase()) || 
+      numFormulario.toLowerCase().includes(busqueda.toLowerCase());
 
-    const coincideEstado = filtroEstado === 'TODOS' || d.estadoSemaforo === filtroEstado;
+    const estadoGuardado = d.estadoSemaforo ? String(d.estadoSemaforo).toUpperCase() : '';
+    const coincideEstado = 
+      filtroEstado === 'TODOS' || 
+      estadoGuardado === filtroEstado ||
+      (filtroEstado === 'PRESENTADO' && estadoGuardado === 'VERDE') ||
+      (filtroEstado === 'EN_PROCESO' && estadoGuardado === 'AMARILLO') ||
+      (filtroEstado === 'PENDIENTE' && estadoGuardado === 'ROJO');
 
     return coincideTexto && coincideEstado;
   });

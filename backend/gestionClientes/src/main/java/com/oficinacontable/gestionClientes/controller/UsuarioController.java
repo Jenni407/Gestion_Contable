@@ -130,36 +130,41 @@ public ResponseEntity<?> login(@RequestBody Map<String, String> loginReq) {
 }
 
     // RECUPERAR CONTRASEÑA
-    @PostMapping("/recuperar-password")
-    public ResponseEntity<?> recuperarPassword(@RequestBody Map<String, String> request) {
-        String correo = request.get("correo");
+ // RECUPERAR CONTRASEÑA
+@PostMapping("/recuperar-password")
+public ResponseEntity<?> recuperarPassword(@RequestBody Map<String, String> request) {
+    String correo = request.get("correo");
 
-        if (correo == null || correo.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("mensaje", "El correo es requerido."));
-        }
+    if (correo == null || correo.trim().isEmpty()) {
+        return ResponseEntity.badRequest().body(Map.of("mensaje", "El correo es requerido."));
+    }
 
-        Optional<Usuario> usuarioOpt = usuarioRepository.findByCorreo(correo);
+    String correoLimpio = correo.trim();
+    Optional<Usuario> usuarioOpt = usuarioRepository.findByCorreo(correoLimpio);
 
-        if (usuarioOpt.isEmpty()) {
-            return ResponseEntity.status(404).body(Map.of("mensaje", "No se encontró un usuario con este correo."));
-        }
+    if (usuarioOpt.isEmpty()) {
+        return ResponseEntity.status(404).body(Map.of("mensaje", "No se encontró un usuario con este correo."));
+    }
 
-        String codigo = String.valueOf((int) ((Math.random() * (999999 - 100000)) + 100000));
-        String tokenJwt = jwtUtil.generarTokenRecuperacion(correo, codigo);
+    String codigo = String.valueOf((int) ((Math.random() * (999999 - 100000)) + 100000));
+    String tokenJwt = jwtUtil.generarTokenRecuperacion(correoLimpio, codigo);
 
-        try {
-            emailService.enviarCodigoRecuperacion(correo, codigo);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of(
-                "mensaje", "Error al enviar el correo. Revisa la configuración del servidor SMTP."
-            ));
-        }
-
-        return ResponseEntity.ok(Map.of(
-            "mensaje", "Código generado y enviado con éxito a tu correo.",
-            "token", tokenJwt
+    try {
+        emailService.enviarCodigoRecuperacion(correoLimpio, codigo);
+    } catch (Exception e) {
+        System.err.println(">>> ERROR DETALLADO SMTP:");
+        e.printStackTrace(); // Esto mostrará exactamente qué pasó en la consola de Java
+        
+        return ResponseEntity.status(500).body(Map.of(
+            "mensaje", "Error al enviar el correo. Revisa la configuración del servidor SMTP."
         ));
     }
+
+    return ResponseEntity.ok(Map.of(
+        "mensaje", "Código generado y enviado con éxito a tu correo.",
+        "token", tokenJwt
+    ));
+}
 
     // VERIFICAR JWT, CÓDIGO Y CAMBIAR CONTRASEÑA
     @PostMapping("/restablecer-password")

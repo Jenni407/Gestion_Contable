@@ -16,29 +16,73 @@ export default function DeclaracionPequenoContribuyente({ clientes = [], declara
     return regimen.includes('pequeño') || regimen.includes('pequeno');
   });
 
-  const getEstadoCelda = (clienteId, mesIndex) => {
-    const decla = declaraciones.find(
-      (d) => (d.cliente?.idCliente === clienteId || d.clienteId === clienteId) && 
-             d.anio === anioActual && 
-             d.mes === mesIndex + 1 &&
-             (d.tipoImpuesto === 'IVA_PEQUENO_CONTRIBUYENTE' || !d.tipoImpuesto)
-    );
+  // Evalúa el semáforo para la matriz de Pequeño Contribuyente
+const getEstadoCelda = (clienteId, mesIndex) => {
+  const mesBuscado = mesIndex + 1;
 
-    if (decla) {
-      if (decla.estadoSemaforo === 'VERDE' || decla.estadoSemaforo === 'PRESENTADO') return { label: '🟢', data: decla };
-      if (decla.estadoSemaforo === 'AMARILLO' || decla.estadoSemaforo === 'EN_PROCESO') return { label: '🟡', data: decla };
+  // Buscar si existe un registro de declaración guardado
+  const decla = declaraciones.find((d) => {
+    // 1. Coincidencia de Cliente (flexible para String vs Number)
+    const idCoincide = Number(d.cliente?.idCliente || d.clienteId || d.cliente?.id) === Number(clienteId);
+
+    // 2. Coincidencia de Año y Mes
+    const anioCoincide = Number(d.anio) === Number(anioActual);
+    const mesCoincide = Number(d.mes) === Number(mesBuscado);
+
+    // 3. Coincidencia del Tipo de Impuesto (Acepta variaciones o si viene nulo)
+    const tipoGuardado = d.tipoImpuesto ? String(d.tipoImpuesto).toUpperCase() : '';
+    const tipoCoincide = 
+      !d.tipoImpuesto || 
+      tipoGuardado.includes('PEQUENO') || 
+      tipoGuardado.includes('PEQUEÑO') || 
+      tipoGuardado.includes('PC') ||
+      tipoGuardado === 'IVA_PEQUENO_CONTRIBUYENTE';
+
+    return idCoincide && anioCoincide && mesCoincide && tipoCoincide;
+  });
+
+  // Si encontramos la declaración en la BD:
+  if (decla) {
+    const estado = decla.estadoSemaforo ? String(decla.estadoSemaforo).toUpperCase().trim() : '';
+
+    // 🟢 Verde: Presentado y Pagado
+    if (estado === 'VERDE' || estado === 'PRESENTADO' || estado === 'PAGADO') {
+      return { label: '🟢', data: decla };
     }
 
-    const mesHoy = new Date().getMonth();
-    const anioHoy = new Date().getFullYear();
-
-    if (anioActual < anioHoy || (anioActual === anioHoy && mesIndex < mesHoy)) {
-      return { label: '🔴', data: null };
+    // 🟡 Amarillo: En Proceso / Documentación Pendiente
+    if (
+      estado === 'AMARILLO' || 
+      estado === 'EN_PROCESO' || 
+      estado === 'PROCESO' || 
+      estado === 'EN PROCESO' ||
+      estado === 'PENDIENTE_DOCUMENTACION'
+    ) {
+      return { label: '🟡', data: decla };
     }
 
-    return { label: '⚪', data: null };
-  };
+    // 🔴 Rojo: Si explícitamente se guardó como Omiso / Pendiente
+    if (estado === 'ROJO' || estado === 'OMISO' || estado === 'PENDIENTE') {
+      return { label: '🔴', data: decla };
+    }
 
+    // Si la declaración existe pero el estado no coincidió con los anteriores, mostramos amarillo por defecto
+    return { label: '🟡', data: decla };
+  }
+
+  // Si NO existe registro guardado en la BD para este mes/año:
+  const fechaActual = new Date();
+  const mesHoy = fechaActual.getMonth(); // 0-11
+  const anioHoy = fechaActual.getFullYear();
+
+  // Meses anteriores sin registro -> 🔴 Omiso / Pendiente
+  if (anioActual < anioHoy || (anioActual === anioHoy && mesIndex < mesHoy)) {
+    return { label: '🔴', data: null };
+  }
+
+  // Períodos futuros -> ⚪ Período Futuro / No Aplica
+  return { label: '⚪', data: null };
+};
   const handleCeldaClick = (cliente, mesIndex, celdaInfo) => {
     setDatosSeleccionados({
       cliente,
@@ -162,6 +206,8 @@ export default function DeclaracionPequenoContribuyente({ clientes = [], declara
           onClose={() => setModalAbierto(false)}
           onSave={() => {
             setModalAbierto(false);
+
+            alert('Declaración guardada exitosamente.');
             if (onReload) onReload();
           }}
         />

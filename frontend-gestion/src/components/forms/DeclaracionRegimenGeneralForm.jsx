@@ -95,7 +95,7 @@ export default function DeclaracionRegimenGeneralForm({ isOpen, clientes = [], d
       onSave();
       onClose();
     } catch (err) {
-      console.error('Error al guardar declaración CG:', err);
+      console.error('Error al guardar declaración:', err);
       alert('Error al guardar la declaración.');
     } finally {
       setCargando(false);

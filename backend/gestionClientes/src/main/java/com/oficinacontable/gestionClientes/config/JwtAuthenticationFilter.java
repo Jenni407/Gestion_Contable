@@ -22,6 +22,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.jwtUtil = jwtUtil;
     }
 
+    /**
+     * Omite el procesamiento del filtro JWT para peticiones públicas.
+     * Evita que tokens persistentes en el navegador (de Contador u otros roles)
+     * interfieran con el acceso libre a login o recuperación de contraseña.
+     */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getRequestURI();
+        String method = request.getMethod();
+
+        return "POST".equalsIgnoreCase(method) && (
+                path.equals("/api/usuarios/login") ||
+                path.equals("/api/usuarios/recuperar-password") ||
+                path.equals("/api/usuarios/restablecer-password")
+        );
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -34,15 +51,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String correo = claims.getSubject();
                 String rol = claims.get("rol", String.class);
 
-                if (correo != null && claims.getExpiration().after(new Date())) {
+                // Validar que el token sea de sesión (que tenga rol) y no un token temporal de recuperación
+                if (correo != null && rol != null && claims.getExpiration().after(new Date())) {
                     var authentication = new UsernamePasswordAuthenticationToken(
                             correo,
                             null,
-                            List.of(new SimpleGrantedAuthority("ROLE_" + (rol != null ? rol : "CONTADOR")))
+                            List.of(new SimpleGrantedAuthority("ROLE_" + rol.toUpperCase()))
                     );
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             } catch (Exception e) {
+                // En caso de token inválido o manipulado, se limpia el contexto para impedir acceso
                 SecurityContextHolder.clearContext();
             }
         }

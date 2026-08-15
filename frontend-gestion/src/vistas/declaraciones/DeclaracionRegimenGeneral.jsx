@@ -19,18 +19,55 @@ export default function DeclaracionRegimenGeneral({ clientes = [], declaraciones
 
   // Evalúa el semáforo considerando el tipo de impuesto actual seleccionado
   const getEstadoCelda = (clienteId, mesIndex) => {
-    const decla = declaraciones.find(
-      (d) => (d.cliente?.idCliente === clienteId || d.clienteId === clienteId) && 
-             d.anio === anioActual && 
-             d.mes === mesIndex + 1 &&
-             d.tipoImpuesto === tipoFiltro
-    );
+    const mesBuscado = mesIndex + 1;
 
+    const decla = declaraciones.find((d) => {
+      const idClienteDecla = d.cliente?.idCliente || d.clienteId || d.cliente?.id;
+      const idCoincide = Number(idClienteDecla) === Number(clienteId);
+
+      const anioCoincide = Number(d.anio) === Number(anioActual);
+      const mesCoincide = Number(d.mes) === Number(mesBuscado);
+
+      return idCoincide && anioCoincide && mesCoincide;
+    });
+
+    // Si encontró el registro para ese cliente, año y mes
     if (decla) {
-      if (decla.estadoSemaforo === 'VERDE' || decla.estadoSemaforo === 'PRESENTADO') return { label: '🟢', data: decla };
-      if (decla.estadoSemaforo === 'AMARILLO' || decla.estadoSemaforo === 'EN_PROCESO') return { label: '🟡', data: decla };
+      // Leemos el estado independientemente del nombre exacto de la propiedad
+      const estado = String(
+        decla.estadoSemaforo || decla.estado || decla.estadoDeclaracion || ''
+      ).toUpperCase().trim();
+
+      // 🟢 VERDE
+      if (
+        estado === 'VERDE' || 
+        estado === 'PRESENTADO' || 
+        estado === 'PAGADO' || 
+        estado === 'COMPLETADO' ||
+        decla.fechaPresentacion
+      ) {
+        return { label: '🟢', data: decla };
+      }
+
+      // 🟡 AMARILLO
+      if (
+        estado === 'AMARILLO' || 
+        estado.includes('PROCESO') || 
+        estado.includes('PENDIENTE')
+      ) {
+        return { label: '🟡', data: decla };
+      }
+
+      // 🔴 ROJO
+      if (estado === 'ROJO' || estado === 'OMISO') {
+        return { label: '🔴', data: decla };
+      }
+
+      // Si existe algún registro guardado para este período, pintarlo en amarillo por defecto
+      return { label: '🟡', data: decla };
     }
 
+    // Si NO hay declaración guardada para el período:
     const mesHoy = new Date().getMonth();
     const anioHoy = new Date().getFullYear();
 
@@ -68,7 +105,7 @@ export default function DeclaracionRegimenGeneral({ clientes = [], declaraciones
             Declaración de Cumplimiento - Régimen General
           </h1>
           <p className="declaraciones-subtitle">
-            control y seguimiento de las declaraciones para clientes bajo el Régimen General.
+            Control y seguimiento de las declaraciones para clientes bajo el Régimen General.
           </p>
         </div>
 
@@ -100,7 +137,7 @@ export default function DeclaracionRegimenGeneral({ clientes = [], declaraciones
             borderRadius: '6px',
             border: 'none',
             fontWeight: '600',
-            cursor: 'pointer',
+            cursor: 'pointer', 
             backgroundColor: tipoFiltro === 'IVA_GENERAL' ? '#641f92' : '#E2E8F0',
             color: tipoFiltro === 'IVA_GENERAL' ? '#FFFFFF' : '#475569'
           }}

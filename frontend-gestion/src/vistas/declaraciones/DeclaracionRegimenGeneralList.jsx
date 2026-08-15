@@ -19,9 +19,21 @@ export default function DeclaracionRegimenGeneralList({ declaraciones = [] }) {
   const [filtroImpuesto, setFiltroImpuesto] = useState('TODOS');
 
   // Filtrar declaraciones correspondientes al Régimen General
-  const declaracionesFiltradas = declaraciones.filter((d) => {
-    const esGeneral = d.tipoImpuesto && d.tipoImpuesto !== 'IVA_PEQUENO_CONTRIBUYENTE';
-    if (!esGeneral) return false;
+const declaracionesFiltradas = declaraciones.filter((d) => {
+  const tipo = d.tipoImpuesto ? String(d.tipoImpuesto).toUpperCase() : '';
+
+  // Excluimos explícitamente Pequeño Contribuyente o tipos no asignados
+  const esPequeño = tipo.includes('PEQUENO') || tipo.includes('PC') || tipo === 'IVA_PEQUENO_CONTRIBUYENTE';
+
+  // Validamos que sea un tipo perteneciente al Régimen General
+  const esGeneral = !esPequeño && (
+    tipo === 'IVA_GENERAL' || 
+    tipo === 'ISR_TRIMESTRAL' || 
+    tipo === 'RETENCION_ISR' ||
+    tipo.includes('GENERAL')
+  );
+
+  if (!esGeneral) return false;
 
     const nombreCliente = 
       d.cliente?.nombreRazonSocial || 
@@ -30,14 +42,19 @@ export default function DeclaracionRegimenGeneralList({ declaraciones = [] }) {
       '';
 
     const numFormulario = d.numeroFormularioSat || '';
-    
-    const coincideTexto = nombreCliente.toLowerCase().includes(busqueda.toLowerCase()) || 
-                          numFormulario.toLowerCase().includes(busqueda.toLowerCase());
+const coincideTexto = nombreCliente.toLowerCase().includes(busqueda.toLowerCase()) || 
+                        numFormulario.toLowerCase().includes(busqueda.toLowerCase());
 
-    const coincideEstado = filtroEstado === 'TODOS' || d.estadoSemaforo === filtroEstado;
-    const coincideImpuesto = filtroImpuesto === 'TODOS' || d.tipoImpuesto === filtroImpuesto;
+  const estadoGuardado = d.estadoSemaforo ? String(d.estadoSemaforo).toUpperCase() : '';
+  const coincideEstado = filtroEstado === 'TODOS' || 
+                         estadoGuardado === filtroEstado ||
+                         (filtroEstado === 'PRESENTADO' && estadoGuardado === 'VERDE') ||
+                         (filtroEstado === 'EN_PROCESO' && estadoGuardado === 'AMARILLO') ||
+                         (filtroEstado === 'PENDIENTE' && estadoGuardado === 'ROJO');
 
-    return coincideTexto && coincideEstado && coincideImpuesto;
+  const coincideImpuesto = filtroImpuesto === 'TODOS' || tipo === filtroImpuesto;
+
+  return coincideTexto && coincideEstado && coincideImpuesto;
   });
 
   const renderEstadoBadge = (estado) => {

@@ -6,8 +6,8 @@ import Boton from '../ui/Boton';
 export default function UsuarioFormModal({ usuarioEditar, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     nombre: '',
-    correoElectronico: '',
-    password: '',
+    correo: '',
+    passwordHash: '',
     rol: 'CONTADOR',
     estado: 'ACTIVO'
   });
@@ -17,16 +17,28 @@ export default function UsuarioFormModal({ usuarioEditar, onClose, onSuccess }) 
     if (usuarioEditar) {
       setFormData({
         nombre: usuarioEditar.nombre || '',
-        correoElectronico: usuarioEditar.correoElectronico || usuarioEditar.correo || '',
-        password: '',
+        correo: usuarioEditar.correo || usuarioEditar.correoElectronico || '',
+        passwordHash: '', // Se mantiene vacío para conservar la contraseña actual al editar
         rol: usuarioEditar.rol || 'CONTADOR',
         estado: usuarioEditar.estado || 'ACTIVO'
+      });
+    } else {
+      setFormData({
+        nombre: '',
+        correo: '',
+        passwordHash: '',
+        rol: 'CONTADOR',
+        estado: 'ACTIVO'
       });
     }
   }, [usuarioEditar]);
 
+  // Esta es la función que faltaba o estaba inaccesible:
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -36,11 +48,16 @@ export default function UsuarioFormModal({ usuarioEditar, onClose, onSuccess }) 
 
     try {
       if (usuarioEditar) {
-        await api.put(`/usuarios/${id}`, {
+        const passwordLimpia = (formData.passwordHash || '').trim();
+
+        const payload = {
           ...usuarioEditar,
           ...formData,
-          password: formData.password || usuarioEditar.password
-        });
+          // Si el usuario no escribió una nueva contraseña, enviamos null para que el backend la conserve
+          passwordHash: passwordLimpia !== '' ? passwordLimpia : null
+        };
+
+        await api.put(`/usuarios/${id}`, payload);
         alert('Usuario actualizado correctamente');
       } else {
         await api.post('/usuarios', formData);
@@ -101,9 +118,9 @@ export default function UsuarioFormModal({ usuarioEditar, onClose, onSuccess }) 
             <label>Correo Electrónico:</label>
             <input
               type="email"
-              name="correoElectronico"
+              name="correo"
               required
-              value={formData.correoElectronico}
+              value={formData.correo}
               onChange={handleChange}
             />
           </div>
@@ -112,9 +129,9 @@ export default function UsuarioFormModal({ usuarioEditar, onClose, onSuccess }) 
             <label>{usuarioEditar ? 'Nueva Contraseña (dejar en blanco para conservar la actual):' : 'Contraseña:'}</label>
             <input
               type="password"
-              name="password"
+              name="passwordHash"
               required={!usuarioEditar}
-              value={formData.password}
+              value={formData.passwordHash}
               onChange={handleChange}
             />
           </div>

@@ -272,7 +272,7 @@ export default function DeclaracionPequenoContribuyenteForm({ isOpen, clientes =
             </Boton>
             <Boton 
               type="submit" 
-              className="btn-guardar"
+              className="btn-guardar" 
               cargando={cargando}
               textoCargando="Guardando..."
             >
