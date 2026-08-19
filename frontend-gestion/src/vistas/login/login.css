@@ -199,57 +199,6 @@
   cursor: not-allowed;
 }
 
-/* SOCIAL DIVIDER */
-.social-divider {
-  margin-top: 24px;
-  text-align: center;
-  position: relative;
-}
-
-.social-divider span {
-  background-color: #ffffff;
-  padding: 0 16px;
-  color: #94a3b8;
-  font-size: 0.85rem;
-  position: relative;
-  z-index: 1;
-}
-
-.social-divider::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  border-top: 1px solid #e2e8f0;
-  z-index: 0;
-}
-
-.social-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 16px;
-}
-
-.social-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1px solid #e2e8f0;
-  background-color: #ffffff;
-  color: #64748b;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.social-btn:hover {
-  background-color: #f8fafc;
-  color: #1e293b;
-  border-color: #cbd5e1;
-}
-
 /* ALERTS */
 .alert-message {
   padding: 10px 14px;
@@ -412,4 +361,47 @@
 
 .modal-actions .btn-secondary:hover {
   background-color: #e2e8f0;
+}
+
+/* BOTÓN DE ACCESO PÚBLICO EN LOGIN */
+.nit-public-access-card {
+  margin-top: 18px;
+  padding: 12px;
+  background-color: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.nit-public-access-card span {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.btn-consulta-nit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background-color: #f3e8ff;
+  color: #6b21a8;
+  border: 1px solid #d8b4fe;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.btn-consulta-nit:hover {
+  background-color: #6b21a8;
+  color: #ffffff;
+  border-color: #6b21a8;
+  box-shadow: 0 2px 8px rgba(107, 33, 168, 0.25);
 }

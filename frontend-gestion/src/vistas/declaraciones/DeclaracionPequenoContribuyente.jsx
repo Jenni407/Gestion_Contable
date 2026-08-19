@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
 import DeclaracionPequenoContribuyenteForm from '../../components/forms/DeclaracionPequenoContribuyenteForm';
+import Paginador from '../../components/common/Paginador';
 import './declaraciones.css'; 
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -9,6 +10,9 @@ export default function DeclaracionPequenoContribuyente({ clientes = [], declara
   const [anioActual, setAnioActual] = useState(2026);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [datosSeleccionados, setDatosSeleccionados] = useState(null);
+  const [pagina, setPagina] = useState(1);
+
+  const POR_PAGINA = 15;
 
   // Filtrar solo clientes de Pequeño Contribuyente
   const clientesPC = clientes.filter((c) => {
@@ -16,73 +20,79 @@ export default function DeclaracionPequenoContribuyente({ clientes = [], declara
     return regimen.includes('pequeño') || regimen.includes('pequeno');
   });
 
+  const totalPaginas = Math.ceil(clientesPC.length / POR_PAGINA);
+  const paginaSegura = Math.min(pagina, Math.max(totalPaginas, 1));
+  const clientesPCPagina = clientesPC.slice((paginaSegura - 1) * POR_PAGINA, paginaSegura * POR_PAGINA);
+
   // Evalúa el semáforo para la matriz de Pequeño Contribuyente
-const getEstadoCelda = (clienteId, mesIndex) => {
-  const mesBuscado = mesIndex + 1;
+  const getEstadoCelda = (clienteId, mesIndex) => {
+    const mesBuscado = mesIndex + 1;
 
-  // Buscar si existe un registro de declaración guardado
-  const decla = declaraciones.find((d) => {
-    // 1. Coincidencia de Cliente (flexible para String vs Number)
-    const idCoincide = Number(d.cliente?.idCliente || d.clienteId || d.cliente?.id) === Number(clienteId);
+    // Buscar TODOS los registros del cliente, año, mes y que sean de Pequeño Contribuyente
+    const declaracionesDelMes = declaraciones.filter((d) => {
+      // 1. Coincidencia de Cliente (flexible para String vs Number)
+      const idCoincide = Number(d.cliente?.idCliente || d.clienteId || d.cliente?.id) === Number(clienteId);
 
-    // 2. Coincidencia de Año y Mes
-    const anioCoincide = Number(d.anio) === Number(anioActual);
-    const mesCoincide = Number(d.mes) === Number(mesBuscado);
+      // 2. Coincidencia de Año y Mes
+      const anioCoincide = Number(d.anio) === Number(anioActual);
+      const mesCoincide = Number(d.mes) === Number(mesBuscado);
 
-    // 3. Coincidencia del Tipo de Impuesto (Acepta variaciones o si viene nulo)
-    const tipoGuardado = d.tipoImpuesto ? String(d.tipoImpuesto).toUpperCase() : '';
-    const tipoCoincide = 
-      !d.tipoImpuesto || 
-      tipoGuardado.includes('PEQUENO') || 
-      tipoGuardado.includes('PEQUEÑO') || 
-      tipoGuardado.includes('PC') ||
-      tipoGuardado === 'IVA_PEQUENO_CONTRIBUYENTE';
+      // 3. Coincidencia del Tipo de Impuesto (Acepta variaciones o si viene nulo)
+      const tipoGuardado = d.tipoImpuesto ? String(d.tipoImpuesto).toUpperCase() : '';
+      const tipoCoincide =
+        !d.tipoImpuesto ||
+        tipoGuardado.includes('PEQUENO') ||
+        tipoGuardado.includes('PEQUEÑO') ||
+        tipoGuardado.includes('PC') ||
+        tipoGuardado === 'IVA_PEQUENO_CONTRIBUYENTE';
 
-    return idCoincide && anioCoincide && mesCoincide && tipoCoincide;
-  });
+      return idCoincide && anioCoincide && mesCoincide && tipoCoincide;
+    });
 
-  // Si encontramos la declaración en la BD:
-  if (decla) {
-    const estado = decla.estadoSemaforo ? String(decla.estadoSemaforo).toUpperCase().trim() : '';
+    // Si existen registros guardados, se prioriza el estado más relevante
+    if (declaracionesDelMes.length > 0) {
+      // 🟢 Verde: Presentado y Pagado (o con fecha de presentación registrada)
+      const presentado = declaracionesDelMes.find((d) => {
+        const estado = d.estadoSemaforo ? String(d.estadoSemaforo).toUpperCase().trim() : '';
+        return (
+          estado === 'VERDE' ||
+          estado === 'PRESENTADO' ||
+          estado === 'PAGADO' ||
+          (d.fechaPresentacion && String(d.fechaPresentacion).trim() !== '')
+        );
+      });
+      if (presentado) return { label: '🟢', data: presentado };
 
-    // 🟢 Verde: Presentado y Pagado
-    if (estado === 'VERDE' || estado === 'PRESENTADO' || estado === 'PAGADO') {
-      return { label: '🟢', data: decla };
+      // 🟡 Amarillo: En Proceso / Documentación Pendiente
+      const enProceso = declaracionesDelMes.find((d) => {
+        const estado = d.estadoSemaforo ? String(d.estadoSemaforo).toUpperCase().trim() : '';
+        return (
+          estado === 'AMARILLO' ||
+          estado === 'EN_PROCESO' ||
+          estado === 'PROCESO' ||
+          estado === 'EN PROCESO' ||
+          estado === 'PENDIENTE_DOCUMENTACION'
+        );
+      });
+      if (enProceso) return { label: '🟡', data: enProceso };
+
+      // 🔴 Rojo: Omiso / Pendiente
+      return { label: '🔴', data: declaracionesDelMes[0] };
     }
 
-    // 🟡 Amarillo: En Proceso / Documentación Pendiente
-    if (
-      estado === 'AMARILLO' || 
-      estado === 'EN_PROCESO' || 
-      estado === 'PROCESO' || 
-      estado === 'EN PROCESO' ||
-      estado === 'PENDIENTE_DOCUMENTACION'
-    ) {
-      return { label: '🟡', data: decla };
+    // Si NO existe registro guardado en la BD para este mes/año:
+    const fechaActual = new Date();
+    const mesHoy = fechaActual.getMonth(); // 0-11
+    const anioHoy = fechaActual.getFullYear();
+
+    // Meses anteriores sin registro -> 🔴 Omiso / Pendiente
+    if (anioActual < anioHoy || (anioActual === anioHoy && mesIndex < mesHoy)) {
+      return { label: '🔴', data: null };
     }
 
-    // 🔴 Rojo: Si explícitamente se guardó como Omiso / Pendiente
-    if (estado === 'ROJO' || estado === 'OMISO' || estado === 'PENDIENTE') {
-      return { label: '🔴', data: decla };
-    }
-
-    // Si la declaración existe pero el estado no coincidió con los anteriores, mostramos amarillo por defecto
-    return { label: '🟡', data: decla };
-  }
-
-  // Si NO existe registro guardado en la BD para este mes/año:
-  const fechaActual = new Date();
-  const mesHoy = fechaActual.getMonth(); // 0-11
-  const anioHoy = fechaActual.getFullYear();
-
-  // Meses anteriores sin registro -> 🔴 Omiso / Pendiente
-  if (anioActual < anioHoy || (anioActual === anioHoy && mesIndex < mesHoy)) {
-    return { label: '🔴', data: null };
-  }
-
-  // Períodos futuros -> ⚪ Período Futuro / No Aplica
-  return { label: '⚪', data: null };
-};
+    // Períodos futuros -> ⚪ Período Futuro / No Aplica
+    return { label: '⚪', data: null };
+  };
   const handleCeldaClick = (cliente, mesIndex, celdaInfo) => {
     setDatosSeleccionados({
       cliente,
@@ -132,8 +142,8 @@ const getEstadoCelda = (clienteId, mesIndex) => {
       <div className="legend-bar">
         <span>🟢 Presentado y Pagado</span>
         <span>🟡 En Proceso / Documentación Pendiente</span>
-        <span>🔴 Omiso / Pendiente de Presentación</span>
-        <span>⚪ Período Futuro / No Aplica</span>
+        <span>🔴 Omiso / Vencido / Pendiente de Presentación</span>
+        <span>⚪ Sin registrar / Período vigente</span>
       </div>
 
       <div className="table-card">
@@ -156,7 +166,7 @@ const getEstadoCelda = (clienteId, mesIndex) => {
                 </td>
               </tr>
             ) : (
-              clientesPC.map((cliente) => {
+              clientesPCPagina.map((cliente) => {
                 const idCliente = cliente.idCliente || cliente.id;
                 const nombreCliente = 
                   cliente.nombre || 
@@ -195,6 +205,7 @@ const getEstadoCelda = (clienteId, mesIndex) => {
             )}
           </tbody>
         </table>
+        <Paginador total={clientesPC.length} porPagina={POR_PAGINA} pagina={paginaSegura} onCambiarPagina={setPagina} />
       </div>
 
       {/* Modal de Formulario */}

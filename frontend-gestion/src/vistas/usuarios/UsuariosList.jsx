@@ -3,11 +3,15 @@ import api from '../../api/axiosConfig';
 import UsuarioFormModal from '../../components/forms/UsuarioForm';
 import Boton from '../../components/ui/Boton';
 import { PlusIcon } from '../../components/icons/Icons';
+import Paginador from '../../components/common/Paginador';
 
 export default function UsuariosList() {
   const [usuarios, setUsuarios] = useState([]);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [usuarioEditar, setUsuarioEditar] = useState(null);
+  const [pagina, setPagina] = useState(1);
+
+  const POR_PAGINA = 15;
 
   useEffect(() => {
     cargarUsuarios();
@@ -47,6 +51,10 @@ export default function UsuariosList() {
     }
   };
 
+  const totalPaginas = Math.ceil(usuarios.length / POR_PAGINA);
+  const paginaSegura = Math.min(pagina, Math.max(totalPaginas, 1));
+  const usuariosPagina = usuarios.slice((paginaSegura - 1) * POR_PAGINA, paginaSegura * POR_PAGINA);
+
   return (
     <div className="manager-card">
       <div className="header-actions">
@@ -66,54 +74,58 @@ export default function UsuariosList() {
         </Boton>
       </div>
 
-      <table className="custom-table">
-        <thead>
-          <tr>
-            <th>NOMBRE</th>
-            <th>CORREO ELECTRÓNICO</th>
-            <th>ROL ACTUAL</th>
-            <th>ESTADO</th>
-            <th>ACCIONES</th>
-          </tr>
-        </thead>
-        <tbody>
-          {usuarios.map((u) => {
-            const id = u.id || u.idUsuario;
-            const esActivo = u.estado === 'ACTIVO';
+      <div className="table-responsive">
+        <table className="custom-table">
+          <thead>
+            <tr>
+              <th>NOMBRE</th>
+              <th>CORREO ELECTRÓNICO</th>
+              <th>ROL ACTUAL</th>
+              <th>ESTADO</th>
+              <th>ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody>
+            {usuariosPagina.map((u) => {
+              const id = u.id || u.idUsuario;
+              const esActivo = u.estado === 'ACTIVO';
 
-            return (
-              <tr key={id}>
-                <td>{u.nombre}</td>
-                <td>{u.correoElectronico || u.correo}</td>
-                <td>
-                  <strong>{u.rol}</strong>
-                </td>
-                <td>
-                  <span className={`status-badge ${esActivo ? 'activo' : 'inactivo'}`}>
-                    {u.estado || 'ACTIVO'}
-                  </span>
-                </td>
-                <td>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    {/* Botón Editar */}
-                    <Boton 
-                      tipoAccion="editar" 
-                      onClick={() => handleEditarUsuario(u)} 
-                    />
+              return (
+                <tr key={id}>
+                  <td>{u.nombre}</td>
+                  <td>{u.correoElectronico || u.correo}</td>
+                  <td>
+                    <strong>{u.rol}</strong>
+                  </td>
+                  <td>
+                    <span className={`status-badge ${esActivo ? 'activo' : 'inactivo'}`}>
+                      {u.estado || 'ACTIVO'}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {/* Botón Editar */}
+                      <Boton 
+                        tipoAccion="editar" 
+                        onClick={() => handleEditarUsuario(u)} 
+                      />
 
-                    {/* Botón Inactivar / Activar */}
-                    <Boton 
-                      tipoAccion={esActivo ? "inactivar" : "activar"} 
-                      title={esActivo ? 'Inactivar Usuario' : 'Activar Usuario'}
-                      onClick={() => handleToggleEstado(u)} 
-                    />
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                      {/* Botón Inactivar / Activar */}
+                      <Boton 
+                        tipoAccion={esActivo ? "inactivar" : "activar"} 
+                        title={esActivo ? 'Inactivar Usuario' : 'Activar Usuario'}
+                        onClick={() => handleToggleEstado(u)} 
+                      />
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <Paginador total={usuarios.length} porPagina={POR_PAGINA} pagina={paginaSegura} onCambiarPagina={setPagina} />
 
       {/* Modal Crear/Editar Usuario */}
       {modalAbierto && (

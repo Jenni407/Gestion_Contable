@@ -1,17 +1,14 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api',
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  baseURL: 'http://localhost:8080/api'
 });
 
-// INTERCEPTOR: Adjunta automáticamente el Token JWT guardado en localStorage a cada petición HTTP
+// INTERCEPTOR: Adjunta automáticamente el Token JWT si existe en localStorage
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    if (token) {
+    if (token && !config.url.includes('/usuarios/login')) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -33,7 +30,9 @@ export const ClientesAPI = {
   obtenerAccesos: (id) => api.get(`/clientes/${id}/accesos`),
   crear: (cliente) => api.post('/clientes', cliente),
   actualizar: (id, cliente) => api.put(`/clientes/${id}`, cliente),
-  eliminar: (id) => api.delete(`/clientes/${id}`)
+  eliminar: (id) => api.delete(`/clientes/${id}`),
+  // Endpoint público para consulta por NIT
+  obtenerPorNitPublico: (nit) => api.get(`/clientes/publico/${nit}`)
 };
 
 export const UsuariosAPI = {
@@ -47,8 +46,23 @@ export const DeclaracionesAPI = {
   obtenerTodas: () => api.get('/declaraciones'), 
   obtenerPorClienteYAnio: (idCliente, anio) => api.get(`/declaraciones/cliente/${idCliente}?anio=${anio}`),
   obtenerTableroAnio: (anio) => api.get(`/declaraciones/tablero?anio=${anio}`),
-  guardar: (datos) => api.post('/declaraciones/guardar', datos), 
-  actualizarEstado: (idDeclaracion, datos) => api.put(`/declaraciones/${idDeclaracion}`, datos)
-};
 
+  // Métodos para las pestañas Pequeño Contribuyente y Régimen General
+  obtenerPequenoContribuyente: (anio) => api.get(`/declaraciones/pequeno-contribuyente?anio=${anio}`),
+  obtenerRegimenGeneral: (anio) => api.get(`/declaraciones/regimen-general?anio=${anio}`),
+
+  // Método para el Portal Público (sin requerir token/login)
+obtenerPublicoPorNit: (nit, telefono) => 
+    api.get(`/declaraciones/publico/${nit}`, { 
+      params: { telefono } 
+    }),
+
+    descargarComprobantePublico: (idDeclaracion) => 
+    api.get(`/declaraciones/publico/descargar/${idDeclaracion}`, { responseType: 'blob' }),
+    
+  guardar: (datos) => api.post('/declaraciones/guardar', datos), 
+  actualizarEstado: (idDeclaracion, datos) => api.put(`/declaraciones/${idDeclaracion}`, datos),
+
+  subirComprobante: (formData) => api.post('/declaraciones/subir-comprobante', formData)
+};
 export default api;

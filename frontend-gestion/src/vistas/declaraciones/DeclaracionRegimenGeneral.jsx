@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
 import DeclaracionRegimenGeneralForm from '../../components/forms/DeclaracionRegimenGeneralForm';
+import Paginador from '../../components/common/Paginador';
 import './declaraciones.css'; 
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -10,6 +11,9 @@ export default function DeclaracionRegimenGeneral({ clientes = [], declaraciones
   const [tipoFiltro, setTipoFiltro] = useState('IVA_GENERAL'); // 'IVA_GENERAL' | 'ISR_TRIMESTRAL' | 'RETENCION_ISR'
   const [modalAbierto, setModalAbierto] = useState(false);
   const [datosSeleccionados, setDatosSeleccionados] = useState(null);
+  const [pagina, setPagina] = useState(1);
+
+  const POR_PAGINA = 15;
 
   // Filtrar solo clientes del Régimen General
   const clientesGeneral = clientes.filter((c) => {
@@ -17,11 +21,16 @@ export default function DeclaracionRegimenGeneral({ clientes = [], declaraciones
     return regimen.includes('general') || regimen.includes('ordinario');
   });
 
+  const totalPaginas = Math.ceil(clientesGeneral.length / POR_PAGINA);
+  const paginaSegura = Math.min(pagina, Math.max(totalPaginas, 1));
+  const clientesGeneralPagina = clientesGeneral.slice((paginaSegura - 1) * POR_PAGINA, paginaSegura * POR_PAGINA);
+
   // Evalúa el semáforo considerando el tipo de impuesto actual seleccionado
   const getEstadoCelda = (clienteId, mesIndex) => {
     const mesBuscado = mesIndex + 1;
 
-    const decla = declaraciones.find((d) => {
+    // Buscar TODOS los registros del cliente, año y mes (cualquier impuesto)
+    const declaracionesDelMes = declaraciones.filter((d) => {
       const idClienteDecla = d.cliente?.idCliente || d.clienteId || d.cliente?.id;
       const idCoincide = Number(idClienteDecla) === Number(clienteId);
 
@@ -31,40 +40,41 @@ export default function DeclaracionRegimenGeneral({ clientes = [], declaraciones
       return idCoincide && anioCoincide && mesCoincide;
     });
 
-    // Si encontró el registro para ese cliente, año y mes
-    if (decla) {
-      // Leemos el estado independientemente del nombre exacto de la propiedad
-      const estado = String(
-        decla.estadoSemaforo || decla.estado || decla.estadoDeclaracion || ''
-      ).toUpperCase().trim();
-
+    // Si existen registros guardados, se prioriza el estado más relevante
+    if (declaracionesDelMes.length > 0) {
       // 🟢 VERDE
-      if (
-        estado === 'VERDE' || 
-        estado === 'PRESENTADO' || 
-        estado === 'PAGADO' || 
-        estado === 'COMPLETADO' ||
-        decla.fechaPresentacion
-      ) {
-        return { label: '🟢', data: decla };
-      }
+      const presentado = declaracionesDelMes.find((d) => {
+        // Leemos el estado independientemente del nombre exacto de la propiedad
+        const estado = String(
+          d.estadoSemaforo || d.estado || d.estadoDeclaracion || ''
+        ).toUpperCase().trim();
+
+        return (
+          estado === 'VERDE' ||
+          estado === 'PRESENTADO' ||
+          estado === 'PAGADO' ||
+          estado === 'COMPLETADO' ||
+          (d.fechaPresentacion && String(d.fechaPresentacion).trim() !== '')
+        );
+      });
+      if (presentado) return { label: '🟢', data: presentado };
 
       // 🟡 AMARILLO
-      if (
-        estado === 'AMARILLO' || 
-        estado.includes('PROCESO') || 
-        estado.includes('PENDIENTE')
-      ) {
-        return { label: '🟡', data: decla };
-      }
+      const enProceso = declaracionesDelMes.find((d) => {
+        const estado = String(
+          d.estadoSemaforo || d.estado || d.estadoDeclaracion || ''
+        ).toUpperCase().trim();
+
+        return (
+          estado === 'AMARILLO' ||
+          estado.includes('PROCESO') ||
+          estado.includes('PENDIENTE')
+        );
+      });
+      if (enProceso) return { label: '🟡', data: enProceso };
 
       // 🔴 ROJO
-      if (estado === 'ROJO' || estado === 'OMISO') {
-        return { label: '🔴', data: decla };
-      }
-
-      // Si existe algún registro guardado para este período, pintarlo en amarillo por defecto
-      return { label: '🟡', data: decla };
+      return { label: '🔴', data: declaracionesDelMes[0] };
     }
 
     // Si NO hay declaración guardada para el período:
@@ -179,8 +189,8 @@ export default function DeclaracionRegimenGeneral({ clientes = [], declaraciones
       <div className="legend-bar">
         <span>🟢 Presentado y Pagado</span>
         <span>🟡 En Proceso / Documentación Pendiente</span>
-        <span>🔴 Omiso / Pendiente de Presentación</span>
-        <span>⚪ Período Futuro / No Aplica</span>
+        <span>🔴 Omiso / Vencido / Pendiente de Presentación</span>
+        <span>⚪ Sin registrar / Período vigente</span>
       </div>
 
       {/* Tabla Matriz */}
@@ -204,7 +214,7 @@ export default function DeclaracionRegimenGeneral({ clientes = [], declaraciones
                 </td>
               </tr>
             ) : (
-              clientesGeneral.map((cliente) => {
+              clientesGeneralPagina.map((cliente) => {
                 const idCliente = cliente.idCliente || cliente.id;
                 const nombreCliente = 
                   cliente.nombre || 
@@ -243,6 +253,7 @@ export default function DeclaracionRegimenGeneral({ clientes = [], declaraciones
             )}
           </tbody>
         </table>
+        <Paginador total={clientesGeneral.length} porPagina={POR_PAGINA} pagina={paginaSegura} onCambiarPagina={setPagina} />
       </div>
 
       {/* Modal de Formulario Específico de Régimen General */}

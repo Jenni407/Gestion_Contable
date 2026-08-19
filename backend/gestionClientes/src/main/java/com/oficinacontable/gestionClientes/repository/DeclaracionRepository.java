@@ -11,22 +11,19 @@ import java.util.Optional;
 @Repository
 public interface DeclaracionRepository extends JpaRepository<DeclaracionMensual, Long> {
     
-    // Busca todas las declaraciones de un año específico
     List<DeclaracionMensual> findByAnio(Integer anio);
     
-    // Buscar declaraciones por régimen del cliente y año
-    @Query("SELECT d FROM DeclaracionMensual d WHERE d.cliente.regimenFiscal = :regimen AND d.anio = :anio")
+    // Consulta flexible: Convierte a minúsculas ambas partes para evitar fallos por mayúsculas/minúsculas
+    @Query("SELECT d FROM DeclaracionMensual d WHERE LOWER(d.cliente.regimenFiscal) LIKE LOWER(CONCAT('%', :regimen, '%')) AND d.anio = :anio")
     List<DeclaracionMensual> findByRegimenAndAnio(@Param("regimen") String regimen, @Param("anio") Integer anio);
 
-    // Buscar declaración específica para evitar duplicados al registrar
     Optional<DeclaracionMensual> findByClienteIdClienteAndAnioAndMesAndTipoImpuesto(
         Long idCliente, Integer anio, Integer mes, String tipoImpuesto
     );
 
-    // Listar por cliente
     List<DeclaracionMensual> findByClienteIdClienteAndAnio(Long idCliente, Integer anio);
 
-    // Busca un registro único por cliente, año y mes
     Optional<DeclaracionMensual> findByClienteIdClienteAndAnioAndMes(Long idCliente, Integer anio, Integer mes);
-}
 
+    List<DeclaracionMensual> findByClienteNit(String nit);
+}

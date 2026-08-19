@@ -1,12 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { User, Calendar, Hash, CheckCircle2, Link, MessageSquare, Receipt } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { 
+  User, 
+  Calendar, 
+  Hash, 
+  CheckCircle2, 
+  Upload,
+  MessageSquare, 
+  Receipt,
+  FileCheck,
+  X
+} from 'lucide-react';
+import Swal from "sweetalert2";
 import { FileTextIcon, CloseIcon } from '../icons/Icons';
 import Boton from '../ui/Boton';
 import { DeclaracionesAPI } from '../../api/axiosConfig'; 
 import '../../vistas/declaraciones/declaraciones.css'; 
 
 export default function DeclaracionRegimenGeneralForm({ isOpen, clientes = [], datosIniciales, onClose, onSave }) {
-  if (!isOpen) return null;
+  // Referencia para activar el input de archivo oculto
+  const fileInputRef = useRef(null);
 
   const [clienteId, setClienteId] = useState(
     datosIniciales?.cliente?.idCliente || datosIniciales?.cliente?.id || ''
@@ -31,9 +43,9 @@ export default function DeclaracionRegimenGeneralForm({ isOpen, clientes = [], d
   const [rutaComprobantePdf, setRutaComprobantePdf] = useState(
     datosIniciales?.declaracionExistente?.rutaComprobantePdf || ''
   );
+  const [archivoPdf, setArchivoPdf] = useState(null);
   const [cargando, setCargando] = useState(false);
 
-  // Verificación 
   const esEdicion = Boolean(
     datosIniciales?.declaracionExistente &&
     (datosIniciales.declaracionExistente.id || datosIniciales.declaracionExistente.idDeclaracion)
@@ -65,38 +77,69 @@ export default function DeclaracionRegimenGeneralForm({ isOpen, clientes = [], d
       setFechaPresentacion(new Date().toISOString().split('T')[0]);
       setRutaComprobantePdf('');
     }
+    setArchivoPdf(null);
   }, [datosIniciales]);
+
+  if (!isOpen) return null;
+
+  // Manejador que restringe la entrada a SOLO NÚMEROS y máximo 11 caracteres
+  const handleNumeroFormularioChange = (e) => {
+    const soloNumeros = e.target.value.replace(/\D/g, ''); 
+    if (soloNumeros.length <= 11) {
+      setNumeroFormularioSat(soloNumeros);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!clienteId) {
-      alert('Por favor selecciona un cliente del Régimen General.');
+      Swal.fire('Por favor selecciona un cliente del Régimen General.');
+      return;
+    }
+
+    if (numeroFormularioSat && numeroFormularioSat.length < 11) {
+      Swal.fire('Atención', 'El número de formulario SAT debe contener exactamente 11 dígitos.', 'warning');
       return;
     }
 
     setCargando(true);
     const esPresentado = estadoSemaforo === 'PRESENTADO';
 
-    const payload = {
-      cliente: { idCliente: Number(clienteId) },
-      tipoImpuesto: tipoImpuesto,
+    const payloadDeclaracion = {
+      cliente: {
+        idCliente: Number(clienteId)
+      },
       anio: Number(anio),
       mes: Number(mes),
+      tipoImpuesto: tipoImpuesto,
       estadoSemaforo: estadoSemaforo,
       numeroFormularioSat: numeroFormularioSat || null,
       fechaPresentacion: esPresentado ? fechaPresentacion : null,
-      rutaComprobantePdf: esPresentado && rutaComprobantePdf ? rutaComprobantePdf : null,
-      observacionesBitacora: observaciones || null
+      observacionesBitacora: observaciones || null,
+      rutaComprobantePdf: rutaComprobantePdf || null
     };
 
     try {
-      await DeclaracionesAPI.guardar(payload);
+      // 1. Guardar metadatos en JSON
+      const res = await DeclaracionesAPI.guardar(payloadDeclaracion);
+      const declaracionGuardada = res.data?.declaracion || res.data;
+      const idDeclaracionFinal = declaracionGuardada?.idDeclaracion || declaracionGuardada?.id;
+
+      // 2. Subir el comprobante PDF si fue adjuntado
+      if (archivoPdf && idDeclaracionFinal) {
+        const formData = new FormData();
+        formData.append('idDeclaracion', idDeclaracionFinal);
+        formData.append('archivo', archivoPdf);
+
+        await DeclaracionesAPI.subirComprobante(formData);
+      }
+
       onSave();
       onClose();
     } catch (err) {
-      console.error('Error al guardar declaración:', err);
-      alert('Error al guardar la declaración.');
+      console.error('Error al guardar declaración del Régimen General:', err);
+      Swal.fire('Error al guardar la declaración.');
     } finally {
       setCargando(false);
     }
@@ -106,7 +149,6 @@ export default function DeclaracionRegimenGeneralForm({ isOpen, clientes = [], d
     <div className="modal-overlay">
       <div className="modal-content">
         
-        {/* Encabezado */}
         <div className="modal-header">
           <h2 className="modal-title">
             <FileTextIcon size={22} color="#2563EB" />
@@ -117,10 +159,8 @@ export default function DeclaracionRegimenGeneralForm({ isOpen, clientes = [], d
           </button>
         </div>
 
-        {/* Formulario */}
         <form onSubmit={handleSubmit} className="declaracion-form">
           
-          {/* Selección de Cliente */}
           <div className="form-group">
             <label>
               <User size={16} /> Cliente (Régimen General)
@@ -147,7 +187,6 @@ export default function DeclaracionRegimenGeneralForm({ isOpen, clientes = [], d
             </select>
           </div>
 
-          {/* Selección de Tipo de Impuesto */}
           <div className="form-group">
             <label>
               <Receipt size={16} /> Tipo de Impuesto / Formulario 
@@ -160,16 +199,15 @@ export default function DeclaracionRegimenGeneralForm({ isOpen, clientes = [], d
             >
               {clienteSeleccionado ? (
                 <>
-                  {clienteSeleccionado.aplicaIvaGeneral && <option value="IVA_GENERAL">IVA General </option>}
-                  {clienteSeleccionado.aplicaIsrt && <option value="ISR_TRIMESTRAL">ISR Trimestral </option>}
-                  {clienteSeleccionado.aplicaRetencionIsr && <option value="RETENCION_ISR">Retenciones ISR </option>}
+                  {clienteSeleccionado.aplicaIvaGeneral && <option value="IVA_GENERAL">IVA General</option>}
+                  {clienteSeleccionado.aplicaIsrt && <option value="ISR_TRIMESTRAL">ISR Trimestral</option>}
+                  {clienteSeleccionado.aplicaRetencionIsr && <option value="RETENCION_ISR">Retenciones ISR</option>}
 
-                  {/* Fallback por si ningún flag está en true */}
                   {!clienteSeleccionado.aplicaIvaGeneral && !clienteSeleccionado.aplicaIsrt && !clienteSeleccionado.aplicaRetencionIsr && (
                     <>
                       <option value="IVA_GENERAL">IVA General</option>
-                      <option value="ISR_TRIMESTRAL">ISR Trimestral </option>
-                      <option value="RETENCION_ISR">Retenciones ISR </option>
+                      <option value="ISR_TRIMESTRAL">ISR Trimestral</option>
+                      <option value="RETENCION_ISR">Retenciones ISR</option>
                     </>
                   )}
                 </>
@@ -183,7 +221,6 @@ export default function DeclaracionRegimenGeneralForm({ isOpen, clientes = [], d
             </select>
           </div>
 
-          {/* Fila: Año y Mes */}
           <div className="form-row" style={{ display: 'flex', gap: '12px' }}>
             <div className="form-group flex-1" style={{ flex: 1 }}>
               <label>
@@ -213,7 +250,6 @@ export default function DeclaracionRegimenGeneralForm({ isOpen, clientes = [], d
             </div>
           </div>
 
-          {/* Estado del Semáforo */}
           <div className="form-group">
             <label>
               <CheckCircle2 size={16} /> Estado
@@ -229,21 +265,22 @@ export default function DeclaracionRegimenGeneralForm({ isOpen, clientes = [], d
             </select>
           </div>
 
-          {/* Número de Formulario */}
           <div className="form-group">
             <label>
               <Hash size={16} /> Número de Formulario 
             </label>
             <input 
               type="text" 
+              inputMode="numeric"
               placeholder="Ej: 20260811001" 
               value={numeroFormularioSat} 
-              onChange={(e) => setNumeroFormularioSat(e.target.value)} 
+              onChange={handleNumeroFormularioChange} 
+              maxLength={11}
               className="form-control" 
             />
           </div>
 
-          {/* Campos Condicionales si está PRESENTADO */}
+          {/* CAMPOS PARA ADJUNTAR */}
           {estadoSemaforo === 'PRESENTADO' && (
             <>
               <div className="form-group">
@@ -259,22 +296,88 @@ export default function DeclaracionRegimenGeneralForm({ isOpen, clientes = [], d
                 />
               </div>
 
+              {/* Adjuntar Archivo PDF Local */}
               <div className="form-group">
-                <label>
-                  <Link size={16} /> Enlace del Comprobante PDF
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Upload size={16} /> Adjuntar Comprobante (PDF)
                 </label>
+
+                {/* Input File Oculto */}
                 <input 
-                  type="url" 
-                  placeholder="https://declaraguate.sat.gob.gt/..." 
-                  value={rutaComprobantePdf} 
-                  onChange={(e) => setRutaComprobantePdf(e.target.value)} 
-                  className="form-control" 
+                  type="file" 
+                  ref={fileInputRef}
+                  accept="application/pdf"
+                  onChange={(e) => setArchivoPdf(e.target.files[0] || null)} 
+                  style={{ display: 'none' }}
                 />
+
+                {/* Si NO hay archivo cargado: Muestra botón */}
+                {!archivoPdf ? (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      backgroundColor: '#ffffff',
+                      color: '#56076e',
+                      fontWeight: '600',
+                      fontSize: '0.875rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      marginTop: '4px'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
+                  >
+                    <Upload size={16} />
+                    <span>Elegir archivo PDF</span>
+                  </button>
+                ) : (
+                  /* Si SÍ hay archivo: Muestra el indicador con nombre y botón para remover */
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '8px 12px',
+                    backgroundColor: '#f0fdf4',
+                    border: '1px solid #bbf7d0',
+                    borderRadius: '8px',
+                    marginTop: '4px'
+                  }}>
+                    <FileCheck size={18} color="#16a34a" />
+                    <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#15803d', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {archivoPdf.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setArchivoPdf(null);
+                        if (fileInputRef.current) fileInputRef.current.value = "";
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#ef4444',
+                        cursor: 'pointer',
+                        padding: '2px',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                      title="Quitar archivo"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           )}
 
-          {/* Observaciones */}
           <div className="form-group">
             <label>
               <MessageSquare size={16} /> Observaciones
@@ -287,7 +390,6 @@ export default function DeclaracionRegimenGeneralForm({ isOpen, clientes = [], d
             ></textarea>
           </div>
 
-          {/* Botones de Acción */}
           <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
             <Boton 
               type="button" 
@@ -300,9 +402,9 @@ export default function DeclaracionRegimenGeneralForm({ isOpen, clientes = [], d
             <Boton 
               type="submit" 
               className="btn-guardar"
-              cargando={cargando}
+              cargando={cargando} 
               textoCargando="Guardando..."
-            >
+            > 
               Guardar Formulario
             </Boton>
           </div>

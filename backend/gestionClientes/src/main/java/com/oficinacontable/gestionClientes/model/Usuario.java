@@ -1,5 +1,7 @@
 package com.oficinacontable.gestionClientes.model;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -20,8 +22,15 @@ public class Usuario {
     private String rol = "CONTADOR";
     private String estado = "ACTIVO"; 
 
-    @Column(name = "creado_en", insertable = false, updatable = false)
-    private String creadoEn;
+    @Column(name = "creado_en", updatable = false)
+    private LocalDateTime creadoEn;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.creadoEn == null) {
+            this.creadoEn = LocalDateTime.now();
+        }
+    }
 
     @Column(name = "codigo_recuperacion")
     private String codigoRecuperacion;
@@ -47,8 +56,8 @@ public class Usuario {
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
 
-    public String getCreadoEn() { return creadoEn; }
-    public void setCreadoEn(String creadoEn) { this.creadoEn = creadoEn; }
+    public LocalDateTime getCreadoEn() { return creadoEn; }
+    public void setCreadoEn(LocalDateTime creadoEn) { this.creadoEn = creadoEn; }
 
     public String getCodigoRecuperacion() { return codigoRecuperacion; }
     public void setCodigoRecuperacion(String codigoRecuperacion) { this.codigoRecuperacion = codigoRecuperacion; }

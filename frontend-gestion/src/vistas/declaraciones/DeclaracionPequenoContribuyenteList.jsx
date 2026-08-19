@@ -1,6 +1,19 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SearchIcon, FileTextIcon } from '../../components/icons/Icons';
 import { ExternalLink } from 'lucide-react';
+import Paginador from '../../components/common/Paginador';
+import api from '../../api/axiosConfig';
+
+// Construye la URL correcta para ver el comprobante PDF en una pestaña nueva
+const obtenerUrlComprobante = (d) => {
+  const ruta = d.rutaComprobantePdf;
+  if (!ruta) return null;
+  if (ruta.startsWith('http://') || ruta.startsWith('https://')) return ruta;
+  const id = d.idDeclaracion || d.id;
+  if (!id) return null;
+  const base = api.defaults.baseURL || 'http://localhost:8080/api';
+  return `${base}/declaraciones/publico/comprobante/${id}`;
+};
 
 const NOMBRES_MESES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -11,6 +24,9 @@ export default function DeclaracionPequenoContribuyenteList({ declaraciones = []
   // Los hooks SIEMPRE deben ir adentro del componente
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('TODOS');
+  const [pagina, setPagina] = useState(1);
+
+  const POR_PAGINA = 15;
 
   // Log para verificar qué declaraciones están llegando desde App.jsx
   console.log("Declaraciones recibidas en el Reporte PC:", declaraciones);
@@ -50,6 +66,15 @@ export default function DeclaracionPequenoContribuyenteList({ declaraciones = []
 
     return coincideTexto && coincideEstado;
   });
+
+  // Reinicia a la primera página cuando cambian los filtros
+  useEffect(() => {
+    setPagina(1);
+  }, [busqueda, filtroEstado]);
+
+  const totalPaginas = Math.ceil(declaracionesFiltradas.length / POR_PAGINA);
+  const paginaSegura = Math.min(pagina, Math.max(totalPaginas, 1));
+  const declaracionesPagina = declaracionesFiltradas.slice((paginaSegura - 1) * POR_PAGINA, paginaSegura * POR_PAGINA);
 
   const renderEstadoBadge = (estado) => {
     switch (estado) {
@@ -126,7 +151,7 @@ export default function DeclaracionPequenoContribuyenteList({ declaraciones = []
             <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
               <th style={{ padding: '14px 16px' }}>CLIENTE</th>
               <th style={{ padding: '14px 16px' }}>PERÍODO</th>
-              <th style={{ padding: '14px 16px' }}>FORMULARIO </th>
+              <th style={{ padding: '14px 16px' }}>NO.FORMULARIO </th>
               <th style={{ padding: '14px 16px' }}>FECHA PRESENTACIÓN</th>
               <th style={{ padding: '14px 16px' }}>ESTADO</th>
               <th style={{ padding: '14px 16px' }}>COMPROBANTE</th>
@@ -141,7 +166,7 @@ export default function DeclaracionPequenoContribuyenteList({ declaraciones = []
                 </td>
               </tr>
             ) : (
-              declaracionesFiltradas.map((d, index) => (
+              declaracionesPagina.map((d, index) => (
                 <tr key={d.idDeclaracion || index} style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '14px 16px', fontWeight: '600', color: '#1e293b' }}>
                     {d.cliente?.nombreRazonSocial || d.cliente?.nombre || d.cliente?.razonSocial || 'Cliente Desconocido'}
@@ -167,9 +192,9 @@ export default function DeclaracionPequenoContribuyenteList({ declaraciones = []
                     {renderEstadoBadge(d.estadoSemaforo)}
                   </td>
                   <td style={{ padding: '14px 16px' }}>
-                    {d.rutaComprobantePdf ? (
+                    {obtenerUrlComprobante(d) ? (
                       <a 
-                        href={d.rutaComprobantePdf} 
+                        href={obtenerUrlComprobante(d)} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#2563eb', fontWeight: '600', textDecoration: 'none' }}
@@ -188,6 +213,7 @@ export default function DeclaracionPequenoContribuyenteList({ declaraciones = []
             )}
           </tbody>
         </table>
+        <Paginador total={declaracionesFiltradas.length} porPagina={POR_PAGINA} pagina={paginaSegura} onCambiarPagina={setPagina} />
       </div>
     </div>
   );

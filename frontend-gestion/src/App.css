@@ -1,7 +1,4 @@
-/* ==========================================
-   LAYOUT Y GENERALES
-   ========================================== */
-
+/* LAYOUT Y GENERALES*/
 * {
   box-sizing: border-box;
   margin: 0;
@@ -488,9 +485,7 @@
   to { opacity: 1; }
 }
 
-/* ==========================================
-   LISTADOS (CLIENTES Y USUARIOS)
-   ========================================== */
+/* LISTADOS (CLIENTES Y USUARIOS) */
 .manager-card {
   background-color: #ffffff;
   padding: 24px 32px;
@@ -505,7 +500,14 @@
   align-items: center;
   margin-bottom: 28px;
   gap: 16px;
-  flex-wrap: wrap;
+  flex-wrap: wrap; /* Mantiene la flexibilidad */
+}
+
+.header-actions-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap; /* Asegura que no se desborden si la pantalla es ínfima */
 }
 
 .header-actions h2 {
@@ -546,38 +548,54 @@
   background-color: #ffffff;
 }
 
-/* Tablas */
+/* Tablas Responsivas SaaS */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto; /* Habilita el scroll horizontal SÓLO aquí */
+  -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
 .custom-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 8px;
+  min-width: 900px; /* Min-width para forzar scroll antes de colapsar columnas */
+  text-align: left;
 }
 
 .custom-table th,
 .custom-table td {
-  padding: 16px;
+  padding: 14px 16px;
   text-align: left;
   border-bottom: 1px solid #e2e8f0;
-  font-size: 0.95rem;
-  color: #334155;
+  font-size: 0.9rem;
+  color: #111827;
+  vertical-align: middle;
 }
 
 .custom-table th {
-  background-color: #f8fafc;
-  color: #64748b;
-  font-size: 0.85rem;
+  background-color: #f9fafb;
+  color: #4b5563;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 2px solid #e2e8f0;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap; /* Evita que las cabeceras se rompan */
 }
 
 .custom-table tbody tr {
-  transition: background-color 0.2s;
+  transition: background-color 0.15s ease-in-out;
+  background-color: #ffffff;
 }
 
 .custom-table tbody tr:hover {
-  background-color: #f8fafc;
+  background-color: #f9fafb; /* Resalte sutil */
+}
+
+.custom-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 /* Badges de Estado */

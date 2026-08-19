@@ -42,13 +42,21 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Endpoints públicos de autenticación
                 .requestMatchers(HttpMethod.POST,
                         "/api/usuarios/login",
                         "/api/usuarios/recuperar-password",
                         "/api/usuarios/restablecer-password").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
+                
+                // ACCESO PÚBLICO PARA CLIENTES Y DECLARACIONES
+                .requestMatchers(HttpMethod.GET, "/api/clientes/publico/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/declaraciones/publico/**").permitAll() 
+                
+                // Endpoints restringidos a roles administrativos
                 .requestMatchers(HttpMethod.GET, "/api/usuarios").hasRole("ADMINISTRADOR")
                 .requestMatchers(HttpMethod.PUT, "/api/usuarios/**").hasRole("ADMINISTRADOR")
+                
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex.authenticationEntryPoint(restAuthenticationEntryPoint()))
