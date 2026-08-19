@@ -7,11 +7,12 @@ import {
   KeyIcon, 
   CheckSquareIcon 
 } from '../icons/Icons';
-import Boton from '../ui/Boton'; // Componente de botón reutilizable
+import Boton from '../ui/Boton';
 
 const INITIAL_STATE = {
   nit: '',
   nombreRazonSocial: '',
+  telefono: '', 
   regimenFiscal: 'Pequeño contribuyente',
   aplicaIvaGeneral: true,
   aplicaIsrt: false,
@@ -24,17 +25,19 @@ const INITIAL_STATE = {
   claveCorreo: ''
 };
 
-function FormField({ label, name, type = 'text', value, onChange, placeholder, required = false }) {
+function FormField({ label, name, type = 'text', value, onChange, placeholder, required = false, maxLength, inputMode }) {
   return (
     <div className="form-group">
       <label>{label}:</label>
       <input
         type={type}
         name={name}
-        value={value}
+        value={value || ''} 
         onChange={onChange}
         placeholder={placeholder}
         required={required}
+        maxLength={maxLength}
+        inputMode={inputMode}
       />
     </div>
   );
@@ -45,11 +48,15 @@ export default function ClienteFormModal({ clienteEditar, onClose, onSuccess }) 
   const [cargando, setCargando] = useState(false);
 
   useEffect(() => {
-    if (!clienteEditar) return;
+    if (!clienteEditar) {
+      setFormData(INITIAL_STATE);
+      return;
+    }
     const cred = clienteEditar.credencial || {};
     setFormData({
       nit: clienteEditar.nit || '',
       nombreRazonSocial: clienteEditar.nombreRazonSocial || clienteEditar.nombre || '',
+      telefono: clienteEditar.telefono || clienteEditar.telefonoConfirmacion || clienteEditar.celular || '',
       regimenFiscal: clienteEditar.regimenFiscal || 'Pequeño contribuyente',
       aplicaIvaGeneral: clienteEditar.aplicaIvaGeneral ?? true,
       aplicaIsrt: clienteEditar.aplicaIsrt ?? false,
@@ -65,19 +72,41 @@ export default function ClienteFormModal({ clienteEditar, onClose, onSuccess }) 
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    let finalValue = type === 'checkbox' ? checked : value;
+
+    // Restricción para NIT 
+    if (name === 'nit' && typeof finalValue === 'string') {
+      finalValue = finalValue.toUpperCase().replace(/[^0-9K]/g, '');
+      if (finalValue.length > 13) return;
+    }
+
+    // Restricción para Teléfono 
+    if (name === 'telefono' && typeof finalValue === 'string') {
+      finalValue = finalValue.replace(/\D/g, '');
+      if (finalValue.length > 8) return;
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: finalValue
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validación previa al envío
+    if (formData.telefono && formData.telefono.length < 8) {
+      alert('El número de teléfono debe tener exactamente 8 dígitos.');
+      return;
+    }
+
     setCargando(true);
     const id = clienteEditar?.idCliente || clienteEditar?.id;
 
     const payload = {
       ...formData,
+      telefonoConfirmacion: formData.telefono,
       credencial: {
         passAgenciaVirtual: formData.claveAV,
         passFel: formData.claveFEL,
@@ -136,12 +165,39 @@ export default function ClienteFormModal({ clienteEditar, onClose, onSuccess }) 
 
         <form onSubmit={handleSubmit}>
           {/* Datos principales */}
-          <FormField label="NIT" name="nit" value={formData.nit} onChange={handleChange} required />
-          <FormField label="Nombre o Razón Social" name="nombreRazonSocial" value={formData.nombreRazonSocial} onChange={handleChange} required />
+          <FormField 
+            label="NIT" 
+            name="nit" 
+            value={formData.nit} 
+            onChange={handleChange} 
+            placeholder="Ej. 12345678" 
+            maxLength={13} 
+            required 
+          />
+
+          <FormField 
+            label="Nombre o Razón Social" 
+            name="nombreRazonSocial" 
+            value={formData.nombreRazonSocial} 
+            onChange={handleChange} 
+            required 
+          />
+          
+          <FormField 
+            label="Teléfono / Celular" 
+            name="telefono" 
+            type="tel" 
+            inputMode="numeric"
+            placeholder="Ej. 55551234 (8 dígitos)" 
+            value={formData.telefono} 
+            onChange={handleChange} 
+            maxLength={8}
+            required 
+          />
 
           <div className="form-group">
             <label>Régimen Fiscal:</label>
-            <select name="regimenFiscal" value={formData.regimenFiscal} onChange={handleChange}>
+            <select name="regimenFiscal" value={formData.regimenFiscal || 'Pequeño contribuyente'} onChange={handleChange}>
               <option value="Pequeño contribuyente">Pequeño contribuyente</option>
               <option value="Régimen General">Régimen General</option>
             </select>
@@ -162,7 +218,7 @@ export default function ClienteFormModal({ clienteEditar, onClose, onSuccess }) 
                   { name: 'aplicaRetencionIsr', label: 'Retenciones ISR (SAT-1331)' }
                 ].map(({ name, label }) => (
                   <label key={name} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                    <input type="checkbox" name={name} checked={formData[name]} onChange={handleChange} />
+                    <input type="checkbox" name={name} checked={!!formData[name]} onChange={handleChange} />
                     <span>{label}</span>
                   </label>
                 ))}
@@ -175,7 +231,7 @@ export default function ClienteFormModal({ clienteEditar, onClose, onSuccess }) 
 
           <div className="form-group">
             <label>Estado:</label>
-            <select name="estado" value={formData.estado} onChange={handleChange}>
+            <select name="estado" value={formData.estado || 'ACTIVO'} onChange={handleChange}>
               <option value="ACTIVO">ACTIVO</option>
               <option value="INACTIVO">INACTIVO</option>
             </select>
@@ -190,8 +246,8 @@ export default function ClienteFormModal({ clienteEditar, onClose, onSuccess }) 
           </h4>
 
           {[
-            { name: 'claveAV', label: 'Clave Agencia Virtual', placeholder: 'Ingresar clave ' },
-            { name: 'claveFEL', label: 'Clave FEL', placeholder: 'Ingresar clave FEL ' },
+            { name: 'claveAV', label: 'Clave Agencia Virtual', placeholder: 'Ingresar clave' },
+            { name: 'claveFEL', label: 'Clave FEL', placeholder: 'Ingresar clave FEL' },
             { name: 'claveCorreo', label: 'Clave Correo Electrónico', placeholder: 'Ingresar clave de correo' }
           ].map(({ name, label, placeholder }) => (
             <FormField
@@ -205,9 +261,9 @@ export default function ClienteFormModal({ clienteEditar, onClose, onSuccess }) 
             />
           ))}
 
-          {/* Acciones reutilizando componente Boton */}
+          {/* Acciones */}
           <div className="modal-actions">
-            <Boton className="btn-secondary" onClick={onClose} disabled={cargando}>
+            <Boton type="button" className="btn-secondary" onClick={onClose} disabled={cargando}>
               Cancelar
             </Boton>
             <Boton type="submit" className="btn-primary" cargando={cargando} textoCargando="Guardando...">

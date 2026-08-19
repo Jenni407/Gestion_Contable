@@ -2,6 +2,7 @@ import React from 'react';
 import { useLogin } from '../../hooks/useLogin';
 import InputPassword from '../../components/ui/InputPassword';
 import Boton from '../../components/ui/Boton';
+import { UsersIcon } from '../../components/icons/Icons';
 import './login.css';
 
 export default function Login({ onLoginSuccess }) {
@@ -23,7 +24,8 @@ export default function Login({ onLoginSuccess }) {
     handleSignUpSubmit,
     handleRecuperarSubmit,
     handleRestablecerSubmit,
-    handleSocialLogin
+    handleSocialLogin,
+    resetMessages
   } = useLogin(onLoginSuccess);
 
   return (
@@ -96,30 +98,10 @@ export default function Login({ onLoginSuccess }) {
               />
             </div>
 
-            <div className="options-row checkbox-option">
-              <label>
-                <input
-                  type="checkbox"
-                  name="agreeTerms"
-                  checked={formData.agreeTerms}
-                  onChange={handleChange}
-                  required
-                />
-                <span>Acepto los términos y condiciones</span>
-              </label>
-            </div>
-
             <Boton type="submit" cargando={cargando} textoCargando="Procesando...">
               Crear Cuenta
             </Boton>
 
-            <div className="social-divider">
-              <span>o regístrate con</span>
-              <div className="social-buttons">
-                <button type="button" className="social-btn" onClick={() => handleSocialLogin('Google')}>G</button>
-                <button type="button" className="social-btn" onClick={() => handleSocialLogin('Facebook')}>f</button>
-              </div>
-            </div>
           </form>
         </div>
 
@@ -157,15 +139,6 @@ export default function Login({ onLoginSuccess }) {
               </div>
 
               <div className="options-row">
-                <label className="remember-me">
-                  <input
-                    type="checkbox"
-                    name="rememberMe"
-                    checked={formData.rememberMe}
-                    onChange={handleChange}
-                  />
-                  <span>Recordarme</span>
-                </label>
                 <button
                   type="button"
                   className="btn-forgot-link"
@@ -183,12 +156,18 @@ export default function Login({ onLoginSuccess }) {
                 Ingresar Ahora
               </Boton>
 
-              <div className="social-divider">
-                <span>o continúa con</span>
-                <div className="social-buttons">
-                  <button type="button" className="social-btn" onClick={() => handleSocialLogin('Google')}>G</button>
-                  <button type="button" className="social-btn" onClick={() => handleSocialLogin('Facebook')}>f</button>
-                </div>
+              {/* REDIRECCIÓN MEJORADA A VISTA PÚBLICA */}
+              <div className="nit-public-access-card">
+                <span>¿Eres cliente y buscas tus declaraciones?</span>
+                <button
+                  type="button"
+                  className="btn-consulta-nit"
+                  onClick={() => {
+                    window.location.href = '/consulta';
+                  }}
+                >
+                  <UsersIcon size={16} /> Consultar por NIT
+                </button>
               </div>
             </form>
           ) : (
@@ -275,6 +254,7 @@ export default function Login({ onLoginSuccess }) {
               <button
                 className="ghost-btn"
                 onClick={() => {
+                  resetMessages();
                   setVistaOlvidado(false);
                   setIsSignUp(false);
                 }}
@@ -290,6 +270,7 @@ export default function Login({ onLoginSuccess }) {
               <button
                 className="ghost-btn"
                 onClick={() => {
+                  resetMessages();
                   setVistaOlvidado(false);
                   setIsSignUp(true);
                 }}

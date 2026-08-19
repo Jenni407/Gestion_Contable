@@ -1,20 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   User, 
   Calendar, 
   Hash, 
   CheckCircle2, 
-  Link, 
+  Upload, 
   MessageSquare,
-  Receipt
+  Receipt,
+  FileCheck,
+  X
 } from 'lucide-react';
+import Swal from 'sweetalert2';
 import { FileTextIcon, CloseIcon } from '../icons/Icons';
 import Boton from '../ui/Boton';
 import { DeclaracionesAPI } from '../../api/axiosConfig'; 
 import '../../vistas/declaraciones/declaraciones.css'; 
 
 export default function DeclaracionPequenoContribuyenteForm({ isOpen, clientes = [], datosIniciales, onClose, onSave }) {
-  if (!isOpen) return null;
+  const fileInputRef = useRef(null);
 
   const [clienteId, setClienteId] = useState(
     datosIniciales?.cliente?.idCliente || datosIniciales?.cliente?.id || ''
@@ -36,7 +39,14 @@ export default function DeclaracionPequenoContribuyenteForm({ isOpen, clientes =
   const [rutaComprobantePdf, setRutaComprobantePdf] = useState(
     datosIniciales?.declaracionExistente?.rutaComprobantePdf || ''
   );
+  
+  const [archivoPdf, setArchivoPdf] = useState(null);
   const [cargando, setCargando] = useState(false);
+
+  const esEdicion = Boolean(
+    datosIniciales?.declaracionExistente &&
+    (datosIniciales.declaracionExistente.id || datosIniciales.declaracionExistente.idDeclaracion)
+  );
 
   useEffect(() => {
     if (datosIniciales?.cliente) {
@@ -60,38 +70,90 @@ export default function DeclaracionPequenoContribuyenteForm({ isOpen, clientes =
       setFechaPresentacion(new Date().toISOString().split('T')[0]);
       setRutaComprobantePdf('');
     }
+    setArchivoPdf(null); 
   }, [datosIniciales]);
+
+  if (!isOpen) return null;
+
+  const handleNumeroFormularioChange = (e) => {
+    const soloNumeros = e.target.value.replace(/\D/g, ''); 
+    if (soloNumeros.length <= 11) {
+      setNumeroFormularioSat(soloNumeros);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!clienteId) {
-      alert('Por favor selecciona un cliente de Pequeño Contribuyente.');
+      Swal.fire({
+        title: 'Selección Requerida',
+        text: 'Por favor, selecciona un cliente antes de guardar.',
+        icon: 'warning',
+        confirmButtonText: 'Aceptar'
+      });
+      return;
+    }
+
+    if (numeroFormularioSat && numeroFormularioSat.length < 11) {
+      Swal.fire({
+        title: 'Formulario Incompleto',
+        text: 'El número de formulario SAT debe contener exactamente 11 dígitos.',
+        icon: 'warning',
+        confirmButtonText: 'Aceptar'
+      });
       return;
     }
 
     setCargando(true);
-    const esPresentado = estadoSemaforo === 'PRESENTADO';
 
-    const payload = {
-      cliente: { idCliente: Number(clienteId) },
-      tipoImpuesto: 'IVA_PEQUENO_CONTRIBUYENTE',
+    const payloadDeclaracion = {
+      cliente: {
+        idCliente: Number(clienteId)
+      },
       anio: Number(anio),
       mes: Number(mes),
+      tipoImpuesto: 'IVA_PEQUENO_CONTRIBUYENTE',
       estadoSemaforo: estadoSemaforo,
       numeroFormularioSat: numeroFormularioSat || null,
-      fechaPresentacion: esPresentado ? fechaPresentacion : null,
-      rutaComprobantePdf: esPresentado && rutaComprobantePdf ? rutaComprobantePdf : null,
-      observacionesBitacora: observaciones || null
+      fechaPresentacion: estadoSemaforo === 'PRESENTADO' ? fechaPresentacion : null,
+      observacionesBitacora: observaciones || null,
+      rutaComprobantePdf: rutaComprobantePdf || null
     };
 
     try {
-      await DeclaracionesAPI.guardar(payload);
+      // 1. Guardar metadatos en JSON
+      const resGuardar = await DeclaracionesAPI.guardar(payloadDeclaracion);
+      const declaracionGuardada = resGuardar.data?.declaracion || resGuardar.data;
+      const idDeclaracionFinal = declaracionGuardada?.idDeclaracion || declaracionGuardada?.id;
+
+      // 2. Subir el comprobante PDF si fue adjuntado
+      if (archivoPdf && idDeclaracionFinal) {
+        const formData = new FormData();
+        formData.append('idDeclaracion', idDeclaracionFinal);
+        formData.append('archivo', archivoPdf);
+
+        await DeclaracionesAPI.subirComprobante(formData);
+      }
+
+      await Swal.fire({
+        title: '¡Operación Exitosa!',
+        text: 'La declaración y el comprobante PDF se guardaron correctamente.',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false
+      });
+
       onSave();
       onClose();
     } catch (err) {
-      console.error('Error al guardar declaración de Pequeño Contribuyente:', err);
-      alert('Error al guardar la declaración.');
+      console.error('Error al procesar la declaración:', err);
+      Swal.fire({
+        title: 'Error',
+        text: 'No se pudo guardar la declaración. Verifica tu conexión o los datos ingresados.',
+        icon: 'error',
+        confirmButtonText: 'Aceptar'
+      });
     } finally {
       setCargando(false);
     }
@@ -101,21 +163,18 @@ export default function DeclaracionPequenoContribuyenteForm({ isOpen, clientes =
     <div className="modal-overlay">
       <div className="modal-content">
         
-        {/* Encabezado */}
         <div className="modal-header">
           <h2 className="modal-title">
             <FileTextIcon size={22} color="#2563EB" />
-            {datosIniciales?.declaracionExistente ? 'Editar Declaración' : 'Registrar Declaración'}
+            {esEdicion ? 'Editar Declaración' : 'Registrar Declaración'}
           </h2>
           <button type="button" onClick={onClose} className="btn-cerrar-modal">
             <CloseIcon size={20} />
           </button>
         </div>
 
-        {/* Formulario */}
         <form onSubmit={handleSubmit} className="declaracion-form">
           
-          {/* Selección de Cliente */}
           <div className="form-group">
             <label>
               <User size={16} /> Cliente (Pequeño Contribuyente)
@@ -142,10 +201,9 @@ export default function DeclaracionPequenoContribuyenteForm({ isOpen, clientes =
             </select>
           </div>
 
-          {/* Tipo de Impuesto (Fijo) */}
           <div className="form-group">
             <label>
-              <Receipt size={16} />  Impuesto
+              <Receipt size={16} /> Impuesto
             </label>
             <input 
               type="text" 
@@ -156,7 +214,6 @@ export default function DeclaracionPequenoContribuyenteForm({ isOpen, clientes =
             />
           </div>
 
-          {/* Fila: Año y Mes */}
           <div className="form-row" style={{ display: 'flex', gap: '12px' }}>
             <div className="form-group flex-1" style={{ flex: 1 }}>
               <label>
@@ -186,7 +243,6 @@ export default function DeclaracionPequenoContribuyenteForm({ isOpen, clientes =
             </div>
           </div>
 
-          {/* Estado del Semáforo */}
           <div className="form-group">
             <label>
               <CheckCircle2 size={16} /> Estado
@@ -202,21 +258,21 @@ export default function DeclaracionPequenoContribuyenteForm({ isOpen, clientes =
             </select>
           </div>
 
-          {/* Número de Formulario */}
           <div className="form-group">
             <label>
-              <Hash size={16} /> Número de Formulario 
+              <Hash size={16} /> Número de Formulario
             </label>
             <input 
               type="text" 
+              inputMode="numeric"
               placeholder="Ej: 20260811001" 
               value={numeroFormularioSat} 
-              onChange={(e) => setNumeroFormularioSat(e.target.value)} 
+              onChange={handleNumeroFormularioChange} 
+              maxLength={11}
               className="form-control" 
             />
           </div>
 
-          {/* Campos Condicionales si está PRESENTADO */}
           {estadoSemaforo === 'PRESENTADO' && (
             <>
               <div className="form-group">
@@ -233,21 +289,81 @@ export default function DeclaracionPequenoContribuyenteForm({ isOpen, clientes =
               </div>
 
               <div className="form-group">
-                <label>
-                  <Link size={16} /> Enlace del Comprobante PDF
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Upload size={16} /> Adjuntar Comprobante (PDF)
                 </label>
+
                 <input 
-                  type="url" 
-                  placeholder="https://declaraguate.sat.gob.gt/..." 
-                  value={rutaComprobantePdf} 
-                  onChange={(e) => setRutaComprobantePdf(e.target.value)} 
-                  className="form-control" 
+                  type="file" 
+                  ref={fileInputRef}
+                  accept="application/pdf"
+                  onChange={(e) => setArchivoPdf(e.target.files[0] || null)} 
+                  style={{ display: 'none' }}
                 />
+
+                {!archivoPdf ? (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      backgroundColor: '#ffffff',
+                      color: '#2563eb',
+                      fontWeight: '600',
+                      fontSize: '0.875rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      marginTop: '4px'
+                    }}
+                  >
+                    <Upload size={16} />
+                    <span>Elegir archivo PDF</span>
+                  </button>
+                ) : (
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '8px 12px',
+                    backgroundColor: '#f0fdf4',
+                    border: '1px solid #bbf7d0',
+                    borderRadius: '8px',
+                    marginTop: '4px'
+                  }}>
+                    <FileCheck size={18} color="#16a34a" />
+                    <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#15803d', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {archivoPdf.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setArchivoPdf(null);
+                        if (fileInputRef.current) fileInputRef.current.value = "";
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#ef4444',
+                        cursor: 'pointer',
+                        padding: '2px',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                      title="Quitar archivo"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           )}
 
-          {/* Observaciones */}
           <div className="form-group">
             <label>
               <MessageSquare size={16} /> Observaciones
@@ -260,7 +376,6 @@ export default function DeclaracionPequenoContribuyenteForm({ isOpen, clientes =
             ></textarea>
           </div>
 
-          {/* Botones de Acción */}
           <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
             <Boton 
               type="button" 

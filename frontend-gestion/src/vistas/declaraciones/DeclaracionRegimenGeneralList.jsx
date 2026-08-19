@@ -1,6 +1,19 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SearchIcon, FileTextIcon } from '../../components/icons/Icons';
 import { ExternalLink } from 'lucide-react';
+import Paginador from '../../components/common/Paginador';
+import api from '../../api/axiosConfig';
+
+// Construye la URL correcta para ver el comprobante PDF en una pestaña nueva
+const obtenerUrlComprobante = (d) => {
+  const ruta = d.rutaComprobantePdf;
+  if (!ruta) return null;
+  if (ruta.startsWith('http://') || ruta.startsWith('https://')) return ruta;
+  const id = d.idDeclaracion || d.id;
+  if (!id) return null;
+  const base = api.defaults.baseURL || 'http://localhost:8080/api';
+  return `${base}/declaraciones/publico/comprobante/${id}`;
+};
 
 const NOMBRES_MESES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -17,6 +30,9 @@ export default function DeclaracionRegimenGeneralList({ declaraciones = [] }) {
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('TODOS');
   const [filtroImpuesto, setFiltroImpuesto] = useState('TODOS');
+  const [pagina, setPagina] = useState(1);
+
+  const POR_PAGINA = 15;
 
   // Filtrar declaraciones correspondientes al Régimen General
 const declaracionesFiltradas = declaraciones.filter((d) => {
@@ -56,6 +72,15 @@ const coincideTexto = nombreCliente.toLowerCase().includes(busqueda.toLowerCase(
 
   return coincideTexto && coincideEstado && coincideImpuesto;
   });
+
+  // Reinicia a la primera página cuando cambian los filtros
+  useEffect(() => {
+    setPagina(1);
+  }, [busqueda, filtroEstado, filtroImpuesto]);
+
+  const totalPaginas = Math.ceil(declaracionesFiltradas.length / POR_PAGINA);
+  const paginaSegura = Math.min(pagina, Math.max(totalPaginas, 1));
+  const declaracionesPagina = declaracionesFiltradas.slice((paginaSegura - 1) * POR_PAGINA, paginaSegura * POR_PAGINA);
 
   const renderEstadoBadge = (estado) => {
     switch (estado) {
@@ -170,7 +195,7 @@ const coincideTexto = nombreCliente.toLowerCase().includes(busqueda.toLowerCase(
                 </td>
               </tr>
             ) : (
-              declaracionesFiltradas.map((d, index) => (
+              declaracionesPagina.map((d, index) => (
                 <tr key={d.idDeclaracion || index} style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '14px 16px', fontWeight: '600', color: '#1e293b' }}>
                     {d.cliente?.nombreRazonSocial || d.cliente?.nombre || d.cliente?.razonSocial || 'Cliente Desconocido'}
@@ -199,9 +224,9 @@ const coincideTexto = nombreCliente.toLowerCase().includes(busqueda.toLowerCase(
                     {renderEstadoBadge(d.estadoSemaforo)}
                   </td>
                   <td style={{ padding: '14px 16px' }}>
-                    {d.rutaComprobantePdf ? (
+                    {obtenerUrlComprobante(d) ? (
                       <a 
-                        href={d.rutaComprobantePdf} 
+                        href={obtenerUrlComprobante(d)} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#2563eb', fontWeight: '600', textDecoration: 'none' }}
@@ -220,6 +245,7 @@ const coincideTexto = nombreCliente.toLowerCase().includes(busqueda.toLowerCase(
             )}
           </tbody>
         </table>
+        <Paginador total={declaracionesFiltradas.length} porPagina={POR_PAGINA} pagina={paginaSegura} onCambiarPagina={setPagina} />
       </div>
     </div>
   );

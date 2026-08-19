@@ -1,5 +1,13 @@
 import React from 'react';
-import { KeyRound, Edit3, UserCheck, UserX, Plus, Search, FileText, UserPlus, X, CheckSquare,  } from 'lucide-react';
+import { KeyRound, Edit3, UserCheck, UserX, Plus, Search, FileText, UserPlus, X, CheckSquare, Users, 
+  ShieldCheck, 
+  Calendar, 
+  Lock, 
+  PhoneCall, 
+  ArrowLeft, 
+  RotateCcw, 
+  CheckCircle2, 
+  ExternalLink } from 'lucide-react';
 
 // Iconos de acciones reutilizables 
 export const PlusIcon = ({ size = 18 }) => <Plus size={size} color="currentColor" />;
@@ -13,6 +21,17 @@ export const FileTextIcon = ({ size = 16, color = "currentColor" }) => <FileText
 export const UserPlusIcon = ({ size = 20, color = "#1E3A8A" }) => <UserPlus size={size} color={color} />;
 export const CloseIcon = ({ size = 20, color = "#64748B" }) => <X size={size} color={color} />;
 export const CheckSquareIcon = ({ size = 16, color = "currentColor" }) => <CheckSquare size={size} color={color} />;
+
+// Iconos agregados para Login y Consulta Pública
+export const UsersIcon = ({ size = 16, color = "currentColor" }) => <Users size={size} color={color} />;
+export const ShieldCheckIcon = ({ size = 18, color = "currentColor" }) => <ShieldCheck size={size} color={color} />;
+export const CalendarIcon = ({ size = 15, color = "currentColor" }) => <Calendar size={size} color={color} />;
+export const LockIcon = ({ size = 20, color = "currentColor" }) => <Lock size={size} color={color} />;
+export const PhoneCallIcon = ({ size = 16, color = "currentColor" }) => <PhoneCall size={size} color={color} />;
+export const ArrowLeftIcon = ({ size = 18, color = "currentColor" }) => <ArrowLeft size={size} color={color} />;
+export const RotateCcwIcon = ({ size = 16, color = "currentColor" }) => <RotateCcw size={size} color={color} />;
+export const CheckCircleIcon = ({ size = 18, color = "currentColor" }) => <CheckCircle2 size={size} color={color} />;
+export const ExternalLinkIcon = ({ size = 12, color = "currentColor" }) => <ExternalLink size={size} color={color} />;
 
 export const EyeOpenIcon = ({ size = 20 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

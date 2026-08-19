@@ -21,6 +21,9 @@ public class Cliente {
     @Column(name = "regimen_fiscal", nullable = false)
     private String regimenFiscal;
 
+    @Column(name = "telefono")
+    private String telefono;
+
 // Configuraciones de Impuestos para Régimen General
     @Column(name = "aplica_iva_general", nullable = false)
     private Boolean aplicaIvaGeneral = true;
@@ -40,8 +43,15 @@ public class Cliente {
     @Column(nullable = false)
     private String estado = "ACTIVO";
 
-   @Column(name = "creado_en", insertable = false, updatable = false)
+       @Column(name = "creado_en", updatable = false)
     private LocalDateTime creadoEn;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.creadoEn == null) {
+            this.creadoEn = LocalDateTime.now();
+        }
+    }
 
     // Relación OneToOne con CredencialCliente (cascade para guardar/actualizar ambas tablas juntas)
     @OneToOne(mappedBy = "cliente", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -63,7 +73,9 @@ public class Cliente {
     public String getRegimenFiscal() { return regimenFiscal; }
     public void setRegimenFiscal(String regimenFiscal) { this.regimenFiscal = regimenFiscal; }
 
-
+    public String getTelefono() { return telefono; }
+    public void setTelefono(String telefono) { this.telefono = telefono; }
+    
     public Boolean getAplicaIvaGeneral() { return aplicaIvaGeneral; }
     public void setAplicaIvaGeneral(Boolean aplicaIvaGeneral) { this.aplicaIvaGeneral = aplicaIvaGeneral; }
 

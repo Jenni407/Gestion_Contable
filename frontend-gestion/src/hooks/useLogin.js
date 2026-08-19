@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import api, { UsuariosAPI, setAuthToken } from '../api/axiosConfig';
+import axios from 'axios';
 
 export function useLogin(onLoginSuccess) {
-  // Vistas
+  // Vistas principales
   const [isSignUp, setIsSignUp] = useState(false);
   const [vistaOlvidado, setVistaOlvidado] = useState(false);
 
@@ -12,7 +13,7 @@ export function useLogin(onLoginSuccess) {
   const [mostrarSignUpPassword, setMostrarSignUpPassword] = useState(false);
   const [mostrarConfirmPassword, setMostrarConfirmPassword] = useState(false);
 
-  // Formulario
+  // Formulario de autenticación / registro
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -23,16 +24,27 @@ export function useLogin(onLoginSuccess) {
     rememberMe: false
   });
 
-  // Recuperación
-  const [pasoRecuperacion, setPasoRecuperacion] = useState(1); 
+  // Estado de flujo de recuperación
+  const [pasoRecuperacion, setPasoRecuperacion] = useState(1);
   const [resetToken, setResetToken] = useState('');
   const [codigoVerificacion, setCodigoVerificacion] = useState('');
   const [nuevaPassword, setNuevaPassword] = useState('');
 
-  // Interfaz
-  const [errorMsg, setErrorMsg] = useState(''); 
+  // Retroalimentación de Interfaz
+  const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [cargando, setCargando] = useState(false);
+
+  // Estados para la Consulta de Declaraciones por NIT
+  const [modalNitAbierto, setModalNitAbierto] = useState(false);
+  const [nitCliente, setNitCliente] = useState('');
+  const [declaracionesCliente, setDeclaracionesCliente] = useState([]);
+  const [cargandoNit, setCargandoNit] = useState(false);
+
+  const resetMessages = () => {
+    setErrorMsg('');
+    setSuccessMsg('');
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -42,10 +54,9 @@ export function useLogin(onLoginSuccess) {
     }));
   };
 
-const handleLoginSubmit = async (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg('');
-    setSuccessMsg('');
+    resetMessages();
     setCargando(true);
 
     try {
@@ -55,22 +66,16 @@ const handleLoginSubmit = async (e) => {
       });
 
       const responseData = res.data;
-      // Extrae el token enviado por Spring Boot
       const token = responseData.token || responseData.usuario?.token;
       const user = responseData.usuario || responseData;
 
-      // SI SPRING BOOT NO ENVIÓ TOKEN, BLOQUEA EL INGRESO
       if (!token) {
         setErrorMsg('El servidor no devolvió el token JWT. Verifica la respuesta del backend.');
-        return; 
+        return;
       }
 
-      // Almacena el token para Axios
       setAuthToken(token);
-      
-      // Pasa al Dashboard solo si hay token
       onLoginSuccess(user);
-
     } catch (err) {
       if (err.code === 'ERR_NETWORK') {
         setErrorMsg('No se puede conectar con el backend (puerto 8080). Asegúrate de tener Spring Boot encendido.');
@@ -84,8 +89,7 @@ const handleLoginSubmit = async (e) => {
 
   const handleSignUpSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg('');
-    setSuccessMsg('');
+    resetMessages();
 
     if (formData.password !== formData.confirmPassword) {
       setErrorMsg('Las contraseñas no coinciden.');
@@ -113,8 +117,7 @@ const handleLoginSubmit = async (e) => {
 
   const handleRecuperarSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg('');
-    setSuccessMsg('');
+    resetMessages();
 
     if (!formData.email) {
       setErrorMsg('Por favor ingresa tu correo electrónico.');
@@ -131,7 +134,7 @@ const handleLoginSubmit = async (e) => {
       if (res.data?.token) {
         setResetToken(res.data.token);
       }
-      
+
       setSuccessMsg('Código generado. Ingresa el código recibido para continuar.');
       setPasoRecuperacion(2);
     } catch (err) {
@@ -143,8 +146,7 @@ const handleLoginSubmit = async (e) => {
 
   const handleRestablecerSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg('');
-    setSuccessMsg('');
+    resetMessages();
     setCargando(true);
 
     try {
@@ -169,6 +171,36 @@ const handleLoginSubmit = async (e) => {
     }
   };
 
+  const handleBuscarNit = async (e) => {
+    e.preventDefault();
+    if (!nitCliente.trim()) {
+      setErrorMsg('Ingresa un número de NIT válido.');
+      return;
+    }
+
+    resetMessages();
+    setCargandoNit(true);
+
+  try {
+    // Limpiamos los espacios en blanco del NIT
+    const nitLimpio = nitCliente.replace(/\s+/g, '');
+
+    // Usamos axios directo hacia la URL del backend para evitar interceptores con JWT
+    const res = await axios.get(`http://localhost:8080/api/declaraciones/publico/${encodeURIComponent(nitLimpio)}`);
+    
+    setDeclaracionesCliente(res.data);
+  } catch (err) {
+    if (err.response?.status === 401) {
+      setErrorMsg('El backend denegó el acceso (401). Verifica permitir permitAll() en SecurityConfig.java.');
+    } else {
+      setErrorMsg(err.response?.data?.mensaje || 'No se encontraron declaraciones para este NIT.');
+    }
+    setDeclaracionesCliente([]);
+  } finally {
+    setCargandoNit(false);
+  }
+};
+
   const handleSocialLogin = (provider) => {
     alert(`La autenticación con ${provider} requiere configuración de OAuth en Spring Boot.`);
   };
@@ -187,10 +219,17 @@ const handleLoginSubmit = async (e) => {
     errorMsg, setErrorMsg,
     successMsg, setSuccessMsg,
     cargando,
+    resetMessages,
     handleLoginSubmit,
     handleSignUpSubmit,
     handleRecuperarSubmit,
     handleRestablecerSubmit,
-    handleSocialLogin
+    handleSocialLogin,
+
+    // Estados y manejador para el NIT exportados correctamente
+    modalNitAbierto, setModalNitAbierto,
+    nitCliente, setNitCliente,
+    declaracionesCliente, setDeclaracionesCliente,
+    cargandoNit, handleBuscarNit
   };
 }

@@ -47,15 +47,7 @@ export default function DashboardLayout({ usuario, onLogout, activeTab, setActiv
               <span>Clientes</span>
             </li>
 
-            {/* CREAR CLIENTE */}
-            <li 
-              className={`sidebar-item ${activeTab === 'nuevo-cliente' ? 'active' : ''}`} 
-              onClick={() => setActiveTab('nuevo-cliente')}
-            >
-              <UserPlus size={18} className="sidebar-icon" />
-              <span>Crear Cliente</span>
-            </li>
-            
+
             {/* SUBMENÚ: DECLARACIONES */}
             <li 
               className="sidebar-item" 
@@ -170,9 +162,6 @@ export default function DashboardLayout({ usuario, onLogout, activeTab, setActiv
 
         <footer className="main-footer">
           <p>© 2026 Oficina Contable. Todos los derechos reservados.</p>
-          <div className="footer-links">
-            <span>Soporte Técnico</span> • <span>Términos y Condiciones</span>
-          </div>
         </footer>
       </main>
     </div>
