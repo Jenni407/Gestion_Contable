@@ -29,5 +29,6 @@ services:
     depends_on:
       - backend
     ports:
-      # Expone nginx en el host; Caddy (contenedor centralizado) apunta aquí
-      - "8081:80"
+      # Expone nginx en el host; Caddy (contenedor centralizado) apunta aquí.
+      # 8082 libre (8081 lo usa gestion-inventario). NO usar 80/443.
+      - "8082:80"
