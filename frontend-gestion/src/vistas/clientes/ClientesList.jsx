@@ -55,22 +55,12 @@ export default function ClientesList() {
     }
   };
 
-  const handleAbrirAccesos = async (cliente) => {
-    try {
-      const id = cliente.idCliente || cliente.id;
-      const res = await api.get(`/clientes/${id}/accesos`);
-
-      setClienteSeleccionado({
-        id: id,
-        nombre: cliente.nombreRazonSocial || cliente.nombre,
-        claveAV: res.data.claveAV || '',
-        claveFEL: res.data.claveFEL || '',
-        claveCorreo: res.data.claveCorreo || ''
-      });
-    } catch (err) {
-      console.error("Error al obtener credenciales:", err);
-      alert("No se pudieron cargar las credenciales desencriptadas");
-    }
+  const handleAbrirAccesos = (cliente) => {
+    const id = cliente.idCliente || cliente.id;
+    setClienteSeleccionado({
+      id,
+      nombre: cliente.nombreRazonSocial || cliente.nombre
+    });
   };
 
   const clientesFiltrados = clientes.filter((c) => {
@@ -168,7 +158,6 @@ export default function ClientesList() {
         <ModalAcceso
           cliente={clienteSeleccionado}
           onClose={() => setClienteSeleccionado(null)}
-          onUpdate={cargarClientes}
         />
       )}
     </div>

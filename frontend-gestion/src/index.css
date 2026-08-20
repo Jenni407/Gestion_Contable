@@ -5,21 +5,49 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
+  /* Paleta unificada de marca (púrpura) */
+  --color-primary: #6b21a8;
+  --color-primary-hover: #581c87;
+  --color-primary-deep: #4c1d95;
+  --color-primary-soft: #f3e8ff;
+  --color-primary-border: #d8b4fe;
+  --color-accent: #9469d2;
+  --color-accent-light: #b48ce6;
+
+  /* Semánticos */
+  --color-success: #16a34a;
+  --color-success-soft: #dcfce7;
+  --color-success-border: #bbf7d0;
+  --color-warning: #d97706;
+  --color-warning-soft: #fef3c7;
+  --color-danger: #ef4444;
+  --color-danger-soft: #fef2f2;
+  --color-danger-border: #fecaca;
+  --color-info: #0284c7;
+  --color-info-soft: #e0f2fe;
+
+  /* Neutros */
   --text: #475569;
   --text-h: #1e293b;
+  --text-muted: #64748b;
+  --text-faint: #94a3b8;
   --bg: #f8fafc;
+  --bg-alt: #f1f5f9;
+  --surface: #ffffff;
   --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+
   --code-bg: #f1f5f9;
-  --accent: #9469D2;
-  --accent-light: #b48ce6;
-  --accent-dark: #6b21a8;
-  --accent-deep: #4c1d95;
-  --accent-bg: rgba(148, 105, 210, 0.1);
-  --accent-border: rgba(148, 105, 210, 0.3);
-  
+
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 20px 40px -15px rgba(0, 0, 0, 0.15);
+
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
 
   --sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;

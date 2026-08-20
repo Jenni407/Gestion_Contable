@@ -177,6 +177,13 @@ function App() {
       {seccion === 'inicio' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
+          {cargando && (
+            <div className="spinner-overlay">
+              <div className="spinner"></div>
+              <span>Cargando información...</span>
+            </div>
+          )}
+
           {/* BANNER DE ALERTA OMISOS CON BOTONES DIRECTOS */}
           {clientesOmisos > 0 && (
             <div style={{
@@ -237,42 +244,42 @@ function App() {
           {/* TARJETAS KPI DE MÉTRICAS */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
             
-            <div className="card" style={{ padding: '18px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: '600' }}>Clientes Totales</span>
+            <div className="kpi-card">
+              <div className="kpi-card__header">
+                <span className="kpi-card__label">Clientes Totales</span>
                 <Users size={20} color="#2563eb" />
               </div>
-              <h2 style={{ color: '#1e293b', marginTop: '10px', fontSize: '1.8rem' }}>{clientes.length}</h2>
-              <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+              <h2 className="kpi-card__value kpi-value--primary">{clientes.length}</h2>
+              <span className="kpi-card__foot">
                 {totalClientesPC} P. Contribuyente | {totalClientesGeneral} R. General
               </span>
             </div>
 
-            <div className="card" style={{ padding: '18px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: '600' }}>Declaraciones Registradas</span>
+            <div className="kpi-card">
+              <div className="kpi-card__header">
+                <span className="kpi-card__label">Declaraciones Registradas</span>
                 <FileText size={20} color="#0284c7" />
               </div>
-              <h2 style={{ color: '#0284c7', marginTop: '10px', fontSize: '1.8rem' }}>{declaraciones.length}</h2>
-              <span style={{ fontSize: '0.78rem', color: '#64748b' }}>Histórico total</span>
+              <h2 className="kpi-card__value kpi-value--info">{declaraciones.length}</h2>
+              <span className="kpi-card__foot">Histórico total</span>
             </div>
 
-            <div className="card" style={{ padding: '18px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: '600' }}>Al Día (Mes Actual)</span>
+            <div className="kpi-card">
+              <div className="kpi-card__header">
+                <span className="kpi-card__label">Al Día (Mes Actual)</span>
                 <CheckCircle2 size={20} color="#16a34a" />
               </div>
-              <h2 style={{ color: '#16a34a', marginTop: '10px', fontSize: '1.8rem' }}>{declaracionesCompletadas}</h2>
-              <span style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: '600' }}>Declaraciones presentadas</span>
+              <h2 className="kpi-card__value kpi-value--success">{declaracionesCompletadas}</h2>
+              <span className="kpi-card__foot" style={{ color: '#16a34a', fontWeight: '600' }}>Declaraciones presentadas</span>
             </div>
 
-            <div className="card" style={{ padding: '18px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: '600' }}>Pendientes / Omisos</span>
+            <div className="kpi-card">
+              <div className="kpi-card__header">
+                <span className="kpi-card__label">Pendientes / Omisos</span>
                 <AlertTriangle size={20} color="#dc2626" />
               </div>
-              <h2 style={{ color: '#dc2626', marginTop: '10px', fontSize: '1.8rem' }}>{clientesOmisos}</h2>
-              <span style={{ fontSize: '0.78rem', color: '#dc2626', fontWeight: '600' }}>Requieren atención</span>
+              <h2 className="kpi-card__value kpi-value--danger">{clientesOmisos}</h2>
+              <span className="kpi-card__foot" style={{ color: '#dc2626', fontWeight: '600' }}>Requieren atención</span>
             </div>
 
           </div>

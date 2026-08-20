@@ -53,10 +53,6 @@ public class Cliente {
         }
     }
 
-    // Relación OneToOne con CredencialCliente (cascade para guardar/actualizar ambas tablas juntas)
-    @OneToOne(mappedBy = "cliente", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private CredencialCliente credencial;
-
     public Cliente() {
     }
 
@@ -96,8 +92,4 @@ public class Cliente {
 
     public LocalDateTime getCreadoEn() { return creadoEn; }
     public void setCreadoEn(LocalDateTime creadoEn) { this.creadoEn = creadoEn; }
-
-    // Métodos para la credencial requeridos por el Controller
-    public CredencialCliente getCredencial() { return credencial; }
-    public void setCredencial(CredencialCliente credencial) { this.credencial = credencial; }
 }

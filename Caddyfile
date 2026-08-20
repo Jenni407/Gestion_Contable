@@ -1,0 +1,17 @@
+# Ejemplo de configuración para tu Caddy centralizado.
+# Añade este bloque al Caddyfile existente (el que ya sirve tu otra aplicación).
+
+# Sustituye "contabilidad.tu-dominio.com" por el dominio real de esta app.
+contabilidad.tu-dominio.com {
+    encode gzip zstd
+
+    # nginx sirve los estáticos del frontend y hace proxy de /api al backend
+    reverse_proxy localhost:8081
+}
+
+# NOTAS:
+# - El contenedor de esta app expone nginx en el puerto 8081 del host
+#   (ver docker-compose.yml). Si tu Caddy corre en un contenedor, usa la
+#   IP del host o una red docker compartida en lugar de "localhost".
+# - Caddy se encarga automáticamente de los certificados HTTPS (Let's Encrypt).
+# - No expongas el puerto 8081 al exterior; solo Caddy debe alcanzarlo.

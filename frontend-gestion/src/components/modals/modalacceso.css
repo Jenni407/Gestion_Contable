@@ -195,3 +195,100 @@
   padding: 0;
   cursor: default;
 }
+
+/* CRUD de credenciales (módulo paramétrico) */
+.btn-add-credential {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--color-primary);
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: background-color 0.2s;
+}
+
+.btn-add-credential:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.credential-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.credential-item {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background-color: #fff;
+}
+
+.credential-item__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.credential-item__info {
+  display: flex;
+  flex-direction: column;
+}
+
+.credential-item__info strong {
+  color: var(--text-h);
+  font-size: 0.95rem;
+}
+
+.credential-item__user {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.credential-item__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.credential-item__url {
+  color: var(--color-info);
+  font-size: 0.8rem;
+  margin-top: 4px;
+  word-break: break-all;
+}
+
+.credential-item__notes {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
+.credential-item__secret {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.credential-item__secret input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: 'Inter', monospace;
+  letter-spacing: 1px;
+  background-color: var(--bg);
+  color: var(--text-h);
+}
+
+.credential-form h4 {
+  margin: 0 0 16px;
+  color: var(--text-h);
+}

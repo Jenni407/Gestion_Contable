@@ -1,0 +1,13 @@
+# Variables de entorno (secretos)
+.env
+.env.*
+!.env.example
+
+# Bases de datos SQLite generadas
+*.db
+
+# Archivos subidos por la aplicación
+uploads/
+
+# Datos persistidos por docker-compose
+data/

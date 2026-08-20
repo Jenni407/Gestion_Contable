@@ -2,6 +2,7 @@ package com.oficinacontable.gestionClientes.service;
 
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -13,7 +14,9 @@ public class Email {
     private JavaMailSender mailSender;
 
     private static final String REMITENTE = "soporte.tecnico.gt058@gmail.com";
-    private static final String URL_CONSULTA = "http://localhost:5173/consulta";
+
+    @Value("${app.portal.url}")
+    private String urlConsulta;
 
     public void enviarCodigoRecuperacion(String correoDestino, String codigo) {
         try {
@@ -98,7 +101,7 @@ public class Email {
                         <p style="font-size: 11px; color: #94a3b8; margin-top: 20px; text-align: center;">No es necesario autenticarse. Ingrese su NIT y el número de teléfono registrado en el portal para ver su reporte completo.</p>
                     </div>
                 </div>
-            """.formatted(nombreCliente, nit, tipoImpuesto, periodo, numeroFormulario, URL_CONSULTA);
+            """.formatted(nombreCliente, nit, tipoImpuesto, periodo, numeroFormulario, urlConsulta + "/consulta");
 
             helper.setText(htmlContent, true);
             mailSender.send(message);

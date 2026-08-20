@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api'
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
 });
 
 // INTERCEPTOR: Adjunta automáticamente el Token JWT si existe en localStorage
@@ -27,12 +27,19 @@ export const setAuthToken = (token) => {
 
 export const ClientesAPI = {
   obtenerTodos: () => api.get('/clientes'),
-  obtenerAccesos: (id) => api.get(`/clientes/${id}/accesos`),
   crear: (cliente) => api.post('/clientes', cliente),
   actualizar: (id, cliente) => api.put(`/clientes/${id}`, cliente),
   eliminar: (id) => api.delete(`/clientes/${id}`),
   // Endpoint público para consulta por NIT
   obtenerPorNitPublico: (nit) => api.get(`/clientes/publico/${nit}`)
+};
+
+export const CredencialesAPI = {
+  listar: (idCliente) => api.get(`/clientes/${idCliente}/credenciales`),
+  obtener: (idCliente, id) => api.get(`/clientes/${idCliente}/credenciales/${id}`),
+  crear: (idCliente, datos) => api.post(`/clientes/${idCliente}/credenciales`, datos),
+  actualizar: (idCliente, id, datos) => api.put(`/clientes/${idCliente}/credenciales/${id}`, datos),
+  eliminar: (idCliente, id) => api.delete(`/clientes/${idCliente}/credenciales/${id}`)
 };
 
 export const UsuariosAPI = {

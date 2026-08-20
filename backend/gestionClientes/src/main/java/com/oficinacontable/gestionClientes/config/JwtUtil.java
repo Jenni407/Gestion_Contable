@@ -13,7 +13,7 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    @Value("${app.jwt.secreto:ClaveSecretaSuperSeguraParaRecuperacion12345!}")
+    @Value("${app.jwt.secreto}")
     private String secreto;
 
     @Value("${app.jwt.expiracionRecuperacionMs:900000}")
@@ -23,6 +23,9 @@ public class JwtUtil {
     private long expiracionLoginMs;
 
     private Key obtenerLlave() {
+        if (secreto == null || secreto.isBlank()) {
+            throw new IllegalStateException("JWT_SECRET no está configurado. Define la variable de entorno JWT_SECRET.");
+        }
         return Keys.hmacShaKeyFor(secreto.getBytes());
     }
 

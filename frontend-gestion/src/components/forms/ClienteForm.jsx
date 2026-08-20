@@ -4,7 +4,6 @@ import {
   EditIcon, 
   UserPlusIcon, 
   CloseIcon, 
-  KeyIcon, 
   CheckSquareIcon 
 } from '../icons/Icons';
 import Boton from '../ui/Boton';
@@ -19,10 +18,7 @@ const INITIAL_STATE = {
   aplicaRetencionIsr: false,
   fechaNacimiento: '',
   correoElectronico: '',
-  estado: 'ACTIVO',
-  claveAV: '',
-  claveFEL: '',
-  claveCorreo: ''
+  estado: 'ACTIVO'
 };
 
 function FormField({ label, name, type = 'text', value, onChange, placeholder, required = false, maxLength, inputMode }) {
@@ -52,7 +48,6 @@ export default function ClienteFormModal({ clienteEditar, onClose, onSuccess }) 
       setFormData(INITIAL_STATE);
       return;
     }
-    const cred = clienteEditar.credencial || {};
     setFormData({
       nit: clienteEditar.nit || '',
       nombreRazonSocial: clienteEditar.nombreRazonSocial || clienteEditar.nombre || '',
@@ -63,10 +58,7 @@ export default function ClienteFormModal({ clienteEditar, onClose, onSuccess }) 
       aplicaRetencionIsr: clienteEditar.aplicaRetencionIsr ?? false,
       fechaNacimiento: clienteEditar.fechaNacimiento || '',
       correoElectronico: clienteEditar.correoElectronico || clienteEditar.correo || '',
-      estado: clienteEditar.estado || 'ACTIVO',
-      claveAV: clienteEditar.claveAV || cred.passAgenciaVirtual || '',
-      claveFEL: clienteEditar.claveFEL || cred.passFel || '',
-      claveCorreo: clienteEditar.claveCorreo || cred.passCorreo || ''
+      estado: clienteEditar.estado || 'ACTIVO'
     });
   }, [clienteEditar]);
 
@@ -106,18 +98,13 @@ export default function ClienteFormModal({ clienteEditar, onClose, onSuccess }) 
 
     const payload = {
       ...formData,
-      telefonoConfirmacion: formData.telefono,
-      credencial: {
-        passAgenciaVirtual: formData.claveAV,
-        passFel: formData.claveFEL,
-        passCorreo: formData.claveCorreo
-      }
+      telefonoConfirmacion: formData.telefono
     };
 
     try {
       if (clienteEditar) {
         await api.put(`/clientes/${id}`, payload);
-        alert('Cliente y credenciales actualizados correctamente');
+        alert('Cliente actualizado correctamente');
       } else {
         await api.post('/clientes', payload);
         alert('Cliente registrado correctamente');
@@ -236,30 +223,6 @@ export default function ClienteFormModal({ clienteEditar, onClose, onSuccess }) 
               <option value="INACTIVO">INACTIVO</option>
             </select>
           </div>
-
-          <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px solid #e2e8f0' }} />
-
-          {/* Sección Bóveda */}
-          <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <KeyIcon size={18} color="#D97706" />
-            <span>Bóveda de contraseñas</span>
-          </h4>
-
-          {[
-            { name: 'claveAV', label: 'Clave Agencia Virtual', placeholder: 'Ingresar clave' },
-            { name: 'claveFEL', label: 'Clave FEL', placeholder: 'Ingresar clave FEL' },
-            { name: 'claveCorreo', label: 'Clave Correo Electrónico', placeholder: 'Ingresar clave de correo' }
-          ].map(({ name, label, placeholder }) => (
-            <FormField
-              key={name}
-              label={label}
-              name={name}
-              type="password"
-              value={formData[name]}
-              onChange={handleChange}
-              placeholder={placeholder}
-            />
-          ))}
 
           {/* Acciones */}
           <div className="modal-actions">

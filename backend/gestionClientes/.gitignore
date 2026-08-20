@@ -4,6 +4,15 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+# Datos sensibles / generados
+*.db
+uploads/
+.env
+.env.*
+!.env.example
+base_de_datos.db
+servicio_contable.db
+
 ### STS ###
 .apt_generated
 .classpath

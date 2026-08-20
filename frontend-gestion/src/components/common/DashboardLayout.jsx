@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Users, UserPlus, FileText, FileCheck, Settings, LogOut, ChevronDown, ChevronRight } from 'lucide-react';
+import { Home, Users, FileText, FileCheck, Settings, LogOut, ChevronDown, ChevronRight, Menu } from 'lucide-react';
 
 export default function DashboardLayout({ usuario, onLogout, activeTab, setActiveTab, children }) {
   const esAdmin = usuario?.rol === 'ADMINISTRADOR';
@@ -8,10 +8,23 @@ export default function DashboardLayout({ usuario, onLogout, activeTab, setActiv
   const [subDeclaracionesAbierto, setSubDeclaracionesAbierto] = useState(true);
   const [subReportesAbierto, setSubReportesAbierto] = useState(true);
 
+  // Estado del menú lateral en móvil
+  const [menuAbierto, setMenuAbierto] = useState(false);
+
+  const seleccionar = (tab) => {
+    setActiveTab(tab);
+    setMenuAbierto(false);
+  };
+
   return (
     <div className="dashboard-container">
+      {/* Overlay para cerrar el menú en móvil */}
+      {menuAbierto && (
+        <div className="sidebar-backdrop" onClick={() => setMenuAbierto(false)} />
+      )}
+
       {/* Sidebar Lateral */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${menuAbierto ? 'open' : ''}`}>
         <div>
           <div className="sidebar-brand" style={{ padding: '16px 12px', textAlign: 'center' }}>
             <img 
@@ -32,7 +45,7 @@ export default function DashboardLayout({ usuario, onLogout, activeTab, setActiv
             {/* INICIO */}
             <li 
               className={`sidebar-item ${activeTab === 'inicio' ? 'active' : ''}`} 
-              onClick={() => setActiveTab('inicio')}
+              onClick={() => seleccionar('inicio')}
             >
               <Home size={18} className="sidebar-icon" />
               <span>Inicio</span>
@@ -41,7 +54,7 @@ export default function DashboardLayout({ usuario, onLogout, activeTab, setActiv
             {/* CLIENTES */}
             <li 
               className={`sidebar-item ${activeTab === 'clientes' ? 'active' : ''}`} 
-              onClick={() => setActiveTab('clientes')}
+              onClick={() => seleccionar('clientes')}
             >
               <Users size={18} className="sidebar-icon" />
               <span>Clientes</span>
@@ -65,14 +78,14 @@ export default function DashboardLayout({ usuario, onLogout, activeTab, setActiv
               <ul style={{ listStyle: 'none', paddingLeft: '28px', margin: '4px 0' }}>
                 <li 
                   className={`sidebar-item ${activeTab === 'declaraciones-pc' || activeTab === 'declaraciones' ? 'active' : ''}`} 
-                  onClick={() => setActiveTab('declaraciones-pc')}
+                  onClick={() => seleccionar('declaraciones-pc')}
                   style={{ fontSize: '0.88rem', padding: '8px 12px' }}
                 >
                   <span>• Pequeño Contribuyente</span>
                 </li>
                 <li 
                   className={`sidebar-item ${activeTab === 'declaraciones-general' ? 'active' : ''}`} 
-                  onClick={() => setActiveTab('declaraciones-general')}
+                  onClick={() => seleccionar('declaraciones-general')}
                   style={{ fontSize: '0.88rem', padding: '8px 12px' }}
                 >
                   <span>• Régimen General</span>
@@ -97,14 +110,14 @@ export default function DashboardLayout({ usuario, onLogout, activeTab, setActiv
               <ul style={{ listStyle: 'none', paddingLeft: '28px', margin: '4px 0' }}>
                 <li 
                   className={`sidebar-item ${activeTab === 'reporte-pc' ? 'active' : ''}`} 
-                  onClick={() => setActiveTab('reporte-pc')}
+                  onClick={() => seleccionar('reporte-pc')}
                   style={{ fontSize: '0.88rem', padding: '8px 12px' }}
                 >
                   <span>• Pequeño Contribuyente</span>
                 </li>
                 <li 
                   className={`sidebar-item ${activeTab === 'reporte-general' || activeTab === 'reporte-declaraciones' ? 'active' : ''}`} 
-                  onClick={() => setActiveTab('reporte-general')}
+                  onClick={() => seleccionar('reporte-general')}
                   style={{ fontSize: '0.88rem', padding: '8px 12px' }}
                 >
                   <span>• Régimen General</span>
@@ -116,7 +129,7 @@ export default function DashboardLayout({ usuario, onLogout, activeTab, setActiv
             {esAdmin && (
               <li 
                 className={`sidebar-item ${activeTab === 'usuarios' ? 'active' : ''}`} 
-                onClick={() => setActiveTab('usuarios')}
+                onClick={() => seleccionar('usuarios')}
               >
                 <Settings size={18} className="sidebar-icon" />
                 <span>Usuarios</span>
@@ -136,17 +149,22 @@ export default function DashboardLayout({ usuario, onLogout, activeTab, setActiv
       {/* Área de Contenido */}
       <main className="main-content">
         <header className="main-header">
-          <div className="header-title">
-            <h2>
-              {activeTab === 'inicio' && 'Panel Principal'}
-              {activeTab === 'clientes' && 'Gestión de Clientes'}
-              {activeTab === 'nuevo-cliente' && 'Registro de Nuevo Cliente'}
-              {(activeTab === 'declaraciones-pc' || activeTab === 'declaraciones') && 'Reporte Declaraciones - Pequeño Contribuyente'}
-              {activeTab === 'declaraciones-general' && 'Declaraciones - Régimen General e ISR'}
-              {activeTab === 'reporte-pc' && 'Reporte de Auditoría SAT-2046'}
-              {(activeTab === 'reporte-general' || activeTab === 'reporte-declaraciones') && 'Reporte Declaraciones - Régimen General'}
-              {activeTab === 'usuarios' && 'Administración de Usuarios'}
-            </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button className="menu-toggle" onClick={() => setMenuAbierto(true)} aria-label="Abrir menú">
+              <Menu size={22} />
+            </button>
+            <div className="header-title">
+              <h2>
+                {activeTab === 'inicio' && 'Panel Principal'}
+                {activeTab === 'clientes' && 'Gestión de Clientes'}
+                {activeTab === 'nuevo-cliente' && 'Registro de Nuevo Cliente'}
+                {(activeTab === 'declaraciones-pc' || activeTab === 'declaraciones') && 'Reporte Declaraciones - Pequeño Contribuyente'}
+                {activeTab === 'declaraciones-general' && 'Declaraciones - Régimen General e ISR'}
+                {activeTab === 'reporte-pc' && 'Reporte de Auditoría SAT-2046'}
+                {(activeTab === 'reporte-general' || activeTab === 'reporte-declaraciones') && 'Reporte Declaraciones - Régimen General'}
+                {activeTab === 'usuarios' && 'Administración de Usuarios'}
+              </h2>
+            </div>
           </div>
           <div className="header-user-info">
             <span>Hola, <strong>{usuario?.nombre || 'Usuario'}</strong></span>
