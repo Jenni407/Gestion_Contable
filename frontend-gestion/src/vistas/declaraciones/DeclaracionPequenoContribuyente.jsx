@@ -217,8 +217,6 @@ export default function DeclaracionPequenoContribuyente({ clientes = [], declara
           onClose={() => setModalAbierto(false)}
           onSave={() => {
             setModalAbierto(false);
-
-            alert('Declaración guardada exitosamente.');
             if (onReload) onReload();
           }}
         />

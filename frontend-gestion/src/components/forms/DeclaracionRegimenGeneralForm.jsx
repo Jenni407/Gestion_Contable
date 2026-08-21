@@ -16,6 +16,17 @@ import Boton from '../ui/Boton';
 import { DeclaracionesAPI } from '../../api/axiosConfig'; 
 import '../../vistas/declaraciones/declaraciones.css'; 
 
+const obtenerUrlComprobanteGuardado = (declaracionExistente, rutaComprobantePdf) => {
+  if (!rutaComprobantePdf) return null;
+  if (rutaComprobantePdf.startsWith('http://') || rutaComprobantePdf.startsWith('https://')) {
+    return rutaComprobantePdf;
+  }
+  const id = declaracionExistente?.idDeclaracion || declaracionExistente?.id;
+  if (!id) return null;
+  const base = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+  return `${base}/declaraciones/publico/comprobante/${id}`;
+};
+
 export default function DeclaracionRegimenGeneralForm({ isOpen, clientes = [], datosIniciales, onClose, onSave }) {
   // Referencia para activar el input de archivo oculto
   const fileInputRef = useRef(null);
@@ -50,6 +61,10 @@ export default function DeclaracionRegimenGeneralForm({ isOpen, clientes = [], d
     datosIniciales?.declaracionExistente &&
     (datosIniciales.declaracionExistente.id || datosIniciales.declaracionExistente.idDeclaracion)
   );
+
+  const urlComprobanteGuardado = esEdicion
+    ? obtenerUrlComprobanteGuardado(datosIniciales?.declaracionExistente, rutaComprobantePdf)
+    : null;
 
   const clienteSeleccionado = clientes.find(c => (c.idCliente || c.id) === Number(clienteId));
 
@@ -103,6 +118,16 @@ export default function DeclaracionRegimenGeneralForm({ isOpen, clientes = [], d
       return;
     }
 
+    if (estadoSemaforo === 'PRESENTADO' && !archivoPdf && !rutaComprobantePdf) {
+      Swal.fire({
+        title: 'Comprobante requerido',
+        text: 'Debes adjuntar el comprobante PDF para registrar la declaración como presentada.',
+        icon: 'warning',
+        confirmButtonText: 'Aceptar'
+      });
+      return;
+    }
+
     setCargando(true);
     const esPresentado = estadoSemaforo === 'PRESENTADO';
 
@@ -134,6 +159,16 @@ export default function DeclaracionRegimenGeneralForm({ isOpen, clientes = [], d
 
         await DeclaracionesAPI.subirComprobante(formData);
       }
+
+      await Swal.fire({
+        title: '¡Operación Exitosa!',
+        text: archivoPdf
+          ? 'La declaración y el comprobante PDF se guardaron correctamente.'
+          : 'La declaración se guardó correctamente (sin comprobante adjunto).',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false
+      });
 
       onSave();
       onClose();
@@ -311,7 +346,25 @@ export default function DeclaracionRegimenGeneralForm({ isOpen, clientes = [], d
                   style={{ display: 'none' }}
                 />
 
-                {/* Si NO hay archivo cargado: Muestra botón */}
+                {urlComprobanteGuardado && !archivoPdf && (
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '8px',
+                    padding: '8px 12px', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe',
+                    borderRadius: '8px', marginTop: '4px', marginRight: '8px'
+                  }}>
+                    <FileCheck size={18} color="#2563eb" />
+                    <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#1e40af' }}>Comprobante ya adjunto</span>
+                    <a
+                      href={urlComprobanteGuardado}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: '0.85rem', fontWeight: '700', color: '#2563eb', textDecoration: 'underline' }}
+                    >
+                      Ver PDF
+                    </a>
+                  </div>
+                )}
+
                 {!archivoPdf ? (
                   <button
                     type="button"

@@ -16,6 +16,17 @@ import Boton from '../ui/Boton';
 import { DeclaracionesAPI } from '../../api/axiosConfig'; 
 import '../../vistas/declaraciones/declaraciones.css'; 
 
+const obtenerUrlComprobanteGuardado = (declaracionExistente, rutaComprobantePdf) => {
+  if (!rutaComprobantePdf) return null;
+  if (rutaComprobantePdf.startsWith('http://') || rutaComprobantePdf.startsWith('https://')) {
+    return rutaComprobantePdf;
+  }
+  const id = declaracionExistente?.idDeclaracion || declaracionExistente?.id;
+  if (!id) return null;
+  const base = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+  return `${base}/declaraciones/publico/comprobante/${id}`;
+};
+
 export default function DeclaracionPequenoContribuyenteForm({ isOpen, clientes = [], datosIniciales, onClose, onSave }) {
   const fileInputRef = useRef(null);
 
@@ -47,6 +58,10 @@ export default function DeclaracionPequenoContribuyenteForm({ isOpen, clientes =
     datosIniciales?.declaracionExistente &&
     (datosIniciales.declaracionExistente.id || datosIniciales.declaracionExistente.idDeclaracion)
   );
+
+  const urlComprobanteGuardado = esEdicion
+    ? obtenerUrlComprobanteGuardado(datosIniciales?.declaracionExistente, rutaComprobantePdf)
+    : null;
 
   useEffect(() => {
     if (datosIniciales?.cliente) {
@@ -105,6 +120,16 @@ export default function DeclaracionPequenoContribuyenteForm({ isOpen, clientes =
       return;
     }
 
+    if (estadoSemaforo === 'PRESENTADO' && !archivoPdf && !rutaComprobantePdf) {
+      Swal.fire({
+        title: 'Comprobante requerido',
+        text: 'Debes adjuntar el comprobante PDF para registrar la declaración como presentada.',
+        icon: 'warning',
+        confirmButtonText: 'Aceptar'
+      });
+      return;
+    }
+
     setCargando(true);
 
     const payloadDeclaracion = {
@@ -138,7 +163,9 @@ export default function DeclaracionPequenoContribuyenteForm({ isOpen, clientes =
 
       await Swal.fire({
         title: '¡Operación Exitosa!',
-        text: 'La declaración y el comprobante PDF se guardaron correctamente.',
+        text: archivoPdf
+          ? 'La declaración y el comprobante PDF se guardaron correctamente.'
+          : 'La declaración se guardó correctamente (sin comprobante adjunto).',
         icon: 'success',
         timer: 2000,
         showConfirmButton: false
@@ -300,6 +327,25 @@ export default function DeclaracionPequenoContribuyenteForm({ isOpen, clientes =
                   onChange={(e) => setArchivoPdf(e.target.files[0] || null)} 
                   style={{ display: 'none' }}
                 />
+
+                {urlComprobanteGuardado && !archivoPdf && (
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '8px',
+                    padding: '8px 12px', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe',
+                    borderRadius: '8px', marginTop: '4px', marginRight: '8px'
+                  }}>
+                    <FileCheck size={18} color="#2563eb" />
+                    <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#1e40af' }}>Comprobante ya adjunto</span>
+                    <a
+                      href={urlComprobanteGuardado}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: '0.85rem', fontWeight: '700', color: '#2563eb', textDecoration: 'underline' }}
+                    >
+                      Ver PDF
+                    </a>
+                  </div>
+                )}
 
                 {!archivoPdf ? (
                   <button
