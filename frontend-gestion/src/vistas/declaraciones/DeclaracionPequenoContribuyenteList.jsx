@@ -3,6 +3,7 @@ import { SearchIcon, FileTextIcon } from '../../components/icons/Icons';
 import { ExternalLink } from 'lucide-react';
 import Paginador from '../../components/common/Paginador';
 import api from '../../api/axiosConfig';
+import { formatearFecha } from '../../utils/fecha';
 
 // Construye la URL correcta para ver el comprobante PDF en una pestaña nueva
 const obtenerUrlComprobante = (d) => {
@@ -186,7 +187,7 @@ export default function DeclaracionPequenoContribuyenteList({ declaraciones = []
                     </span>
                   </td>
                   <td style={{ padding: '14px 16px', color: '#64748b' }}>
-                    {d.fechaPresentacion || 'Sin registro'}
+                    {formatearFecha(d.fechaPresentacion) || 'Sin registro'}
                   </td>
                   <td style={{ padding: '14px 16px' }}>
                     {renderEstadoBadge(d.estadoSemaforo)}

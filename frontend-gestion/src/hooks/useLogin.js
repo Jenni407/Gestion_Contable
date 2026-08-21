@@ -186,7 +186,8 @@ export function useLogin(onLoginSuccess) {
     const nitLimpio = nitCliente.replace(/\s+/g, '');
 
     // Usamos axios directo hacia la URL del backend para evitar interceptores con JWT
-    const res = await axios.get(`http://localhost:8080/api/declaraciones/publico/${encodeURIComponent(nitLimpio)}`);
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+    const res = await axios.get(`${apiBase}/declaraciones/publico/${encodeURIComponent(nitLimpio)}`);
     
     setDeclaracionesCliente(res.data);
   } catch (err) {

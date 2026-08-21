@@ -6,6 +6,7 @@ import com.oficinacontable.gestionClientes.model.Cliente;
 import com.oficinacontable.gestionClientes.model.Credencial;
 import com.oficinacontable.gestionClientes.repository.ClienteRepository;
 import com.oficinacontable.gestionClientes.repository.CredencialRepository;
+import com.oficinacontable.gestionClientes.service.EventoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,10 +19,12 @@ public class CredencialController {
 
     private final CredencialRepository credencialRepository;
     private final ClienteRepository clienteRepository;
+    private final EventoService eventoService;
 
-    public CredencialController(CredencialRepository credencialRepository, ClienteRepository clienteRepository) {
+    public CredencialController(CredencialRepository credencialRepository, ClienteRepository clienteRepository, EventoService eventoService) {
         this.credencialRepository = credencialRepository;
         this.clienteRepository = clienteRepository;
+        this.eventoService = eventoService;
     }
 
     // Lista las credenciales SIN contraseñas (solo metadatos + servicio)
@@ -65,7 +68,9 @@ public class CredencialController {
         c.setNotas(dto.getNotas());
         c.setPasswordCifrada(EncriptacionUtil.encriptar(dto.getPassword()));
 
-        return ResponseEntity.ok(toDTO(credencialRepository.save(c)));
+        Credencial guardada = credencialRepository.save(c);
+        eventoService.publicar(EventoService.TOPIC_CREDENCIALES, "CREDENCIAL", "CREAR", idCliente);
+        return ResponseEntity.ok(toDTO(guardada));
     }
 
     @PutMapping("/{id}")
@@ -82,7 +87,9 @@ public class CredencialController {
                     if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
                         c.setPasswordCifrada(EncriptacionUtil.encriptar(dto.getPassword()));
                     }
-                    return ResponseEntity.ok(toDTO(credencialRepository.save(c)));
+                    Credencial guardada = credencialRepository.save(c);
+                    eventoService.publicar(EventoService.TOPIC_CREDENCIALES, "CREDENCIAL", "ACTUALIZAR", idCliente);
+                    return ResponseEntity.ok(toDTO(guardada));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -92,6 +99,7 @@ public class CredencialController {
         return credencialRepository.findByIdCredencialAndClienteIdCliente(id, idCliente)
                 .map(c -> {
                     credencialRepository.delete(c);
+                    eventoService.publicar(EventoService.TOPIC_CREDENCIALES, "CREDENCIAL", "ELIMINAR", idCliente);
                     return ResponseEntity.ok(Map.of("mensaje", "Credencial eliminada."));
                 })
                 .orElse(ResponseEntity.notFound().build());

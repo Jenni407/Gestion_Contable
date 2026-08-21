@@ -4,6 +4,7 @@ import com.oficinacontable.gestionClientes.model.DeclaracionMensual;
 import com.oficinacontable.gestionClientes.repository.ClienteRepository;
 import com.oficinacontable.gestionClientes.repository.DeclaracionRepository;
 import com.oficinacontable.gestionClientes.service.Email;
+import com.oficinacontable.gestionClientes.service.EventoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -35,6 +36,9 @@ public class DeclaracionMensualController {
 
     @Autowired
     private Email emailService;
+
+    @Autowired
+    private EventoService eventoService;
 
     // GET /api/declaraciones/pequeno-contribuyente?anio=2026
     @GetMapping("/pequeno-contribuyente")
@@ -216,6 +220,9 @@ public class DeclaracionMensualController {
 
             DeclaracionMensual guardado = repository.save(aGuardar);
 
+            // Notificar en tiempo real a los clientes conectados
+            eventoService.publicar(EventoService.TOPIC_DECLARACIONES, "DECLARACION", "GUARDAR", guardado.getIdDeclaracion());
+
             // Enviar correo de confirmación si la declaración quedó presentada
             boolean esPresentado = guardado.getEstadoSemaforo() != null &&
                 (guardado.getEstadoSemaforo().trim().equalsIgnoreCase("PRESENTADO") ||
@@ -274,6 +281,7 @@ public ResponseEntity<?> subirComprobante(
             DeclaracionMensual decla = declaOpt.get();
             decla.setRutaComprobantePdf(rutaCompleta.toString());
             repository.save(decla);
+            eventoService.publicar(EventoService.TOPIC_DECLARACIONES, "DECLARACION", "COMPROBANTE", idDeclaracion);
             return ResponseEntity.ok(Map.of("mensaje", "PDF subido con éxito", "ruta", rutaCompleta.toString()));
         }
 

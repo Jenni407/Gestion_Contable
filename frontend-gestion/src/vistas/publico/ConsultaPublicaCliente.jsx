@@ -319,10 +319,11 @@ export default function ConsultaPublicaCliente() {
                         const pdfUrl = d.rutaComprobantePdf || d.archivoUrl || d.pdfPath;
                         const idDec = d.idDeclaracion || d.id;
 
+                        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
                         const downloadLink = pdfUrl && pdfUrl.startsWith('http')
                           ? pdfUrl
                           : (pdfUrl
-                              ? `http://localhost:8080/api/declaraciones/publico/descargar/${idDec}`
+                              ? `${apiBase}/declaraciones/publico/descargar/${idDec}`
                               : null);
 
                         return (

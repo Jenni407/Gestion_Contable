@@ -23,7 +23,8 @@ import ConsultaPublicaCliente from './vistas/publico/ConsultaPublicaCliente';
 
 import CalendarioSAT from './components/ui/CalendarioSAT'; 
 
-import { ClientesAPI, DeclaracionesAPI, setAuthToken } from './api/axiosConfig'; 
+import { ClientesAPI, DeclaracionesAPI, setAuthToken } from './api/axiosConfig';
+import { useEventosTiempoReal } from './hooks/useEventosTiempoReal';
 import './App.css';
 
 function App() {
@@ -78,6 +79,9 @@ function App() {
   useEffect(() => {
     if (usuario) cargarDatos();
   }, [usuario]);
+
+  // Tiempo real: mientras haya sesión, escucha cambios de cualquier módulo y refresca los datos
+  useEventosTiempoReal(Boolean(usuario), cargarDatos);
 
   const handleLoginSuccess = (data) => {
     if (data.token) setAuthToken(data.token);

@@ -2,6 +2,7 @@ package com.oficinacontable.gestionClientes.controller;
 
 import com.oficinacontable.gestionClientes.model.Cliente;
 import com.oficinacontable.gestionClientes.repository.ClienteRepository;
+import com.oficinacontable.gestionClientes.service.EventoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,9 @@ public class ClienteController {
     @Autowired
     private ClienteRepository clienteRepository;
 
+    @Autowired
+    private EventoService eventoService;
+
     @GetMapping
     public List<Cliente> obtenerClientes() {
         return clienteRepository.findAll();
@@ -24,7 +28,9 @@ public class ClienteController {
 
     @PostMapping
     public Cliente guardarCliente(@RequestBody Cliente cliente) {
-        return clienteRepository.save(cliente);
+        Cliente guardado = clienteRepository.save(cliente);
+        eventoService.publicar(EventoService.TOPIC_CLIENTES, "CLIENTE", "CREAR", guardado.getIdCliente());
+        return guardado;
     }
 
     @PutMapping("/{id}")
@@ -40,7 +46,9 @@ public class ClienteController {
             clienteExistente.setFechaNacimiento(clienteDetalles.getFechaNacimiento());
             clienteExistente.setCorreoElectronico(clienteDetalles.getCorreoElectronico());
             clienteExistente.setEstado(clienteDetalles.getEstado());
-            return ResponseEntity.ok(clienteRepository.save(clienteExistente));
+            Cliente guardado = clienteRepository.save(clienteExistente);
+            eventoService.publicar(EventoService.TOPIC_CLIENTES, "CLIENTE", "ACTUALIZAR", id);
+            return ResponseEntity.ok(guardado);
         }).orElse(ResponseEntity.notFound().build());
     }
 

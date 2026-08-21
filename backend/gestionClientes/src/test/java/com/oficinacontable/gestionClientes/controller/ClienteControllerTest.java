@@ -2,6 +2,7 @@ package com.oficinacontable.gestionClientes.controller;
 
 import com.oficinacontable.gestionClientes.model.Cliente;
 import com.oficinacontable.gestionClientes.repository.ClienteRepository;
+import com.oficinacontable.gestionClientes.service.EventoService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,6 +20,9 @@ class ClienteControllerTest {
 
     @Mock
     private ClienteRepository clienteRepository;
+
+    @Mock
+    private EventoService eventoService;
 
     @InjectMocks
     private ClienteController clienteController;

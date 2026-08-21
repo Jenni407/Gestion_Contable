@@ -4,6 +4,7 @@ import com.oficinacontable.gestionClientes.config.JwtUtil;
 import com.oficinacontable.gestionClientes.repository.UsuarioRepository;
 import com.oficinacontable.gestionClientes.model.Usuario;
 import com.oficinacontable.gestionClientes.service.Email;
+import com.oficinacontable.gestionClientes.service.EventoService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -23,13 +24,15 @@ public class UsuarioController {
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
     private final Email emailService;
+    private final EventoService eventoService;
 
     // Inyección constructor
-    public UsuarioController(UsuarioRepository usuarioRepository, JwtUtil jwtUtil, Email emailService, PasswordEncoder passwordEncoder) {
+    public UsuarioController(UsuarioRepository usuarioRepository, JwtUtil jwtUtil, Email emailService, PasswordEncoder passwordEncoder, EventoService eventoService) {
         this.usuarioRepository = usuarioRepository;
         this.jwtUtil = jwtUtil;
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
+        this.eventoService = eventoService;
     }
 
     @GetMapping
@@ -48,6 +51,7 @@ public class UsuarioController {
         }
         Usuario usuarioGuardado = usuarioRepository.save(usuario);
         usuarioGuardado.setPasswordHash(null);
+        eventoService.publicar(EventoService.TOPIC_USUARIOS, "USUARIO", "CREAR", usuarioGuardado.getIdUsuario());
         return ResponseEntity.ok(usuarioGuardado);
     }
 
@@ -65,6 +69,7 @@ public class UsuarioController {
                     }
                     Usuario guardado = usuarioRepository.save(usuario);
                     guardado.setPasswordHash(null);
+                    eventoService.publicar(EventoService.TOPIC_USUARIOS, "USUARIO", "ACTUALIZAR", id);
                     return ResponseEntity.ok(guardado);
                 })
                 .orElse(ResponseEntity.notFound().build());

@@ -5,6 +5,7 @@ import ClienteFormModal from '../../components/forms/ClienteForm';
 import Boton from '../../components/ui/Boton';
 import { PlusIcon } from '../../components/icons/Icons';
 import Paginador from '../../components/common/Paginador';
+import { formatearFecha } from '../../utils/fecha';
 
 export default function ClientesList() {
   const [clientes, setClientes] = useState([]);
@@ -118,7 +119,7 @@ export default function ClientesList() {
                   <td><strong>{cliente.nit}</strong></td>
                   <td>{cliente.nombreRazonSocial || cliente.nombre}</td>
                   <td>{numTelefono}</td>
-                  <td>{cliente.fechaNacimiento || '---'}</td>
+                  <td>{formatearFecha(cliente.fechaNacimiento) || '---'}</td>
                   <td>{cliente.regimenFiscal}</td>
                   <td>{cliente.correoElectronico || cliente.correo}</td>
                   <td>

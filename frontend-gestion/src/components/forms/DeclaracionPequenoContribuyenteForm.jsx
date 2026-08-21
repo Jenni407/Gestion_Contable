@@ -13,8 +13,9 @@ import {
 import Swal from 'sweetalert2';
 import { FileTextIcon, CloseIcon } from '../icons/Icons';
 import Boton from '../ui/Boton';
-import { DeclaracionesAPI } from '../../api/axiosConfig'; 
-import '../../vistas/declaraciones/declaraciones.css'; 
+import { DeclaracionesAPI } from '../../api/axiosConfig';
+import { obtenerFechaLocal } from '../../utils/fecha';
+import '../../vistas/declaraciones/declaraciones.css';
 
 const obtenerUrlComprobanteGuardado = (declaracionExistente, rutaComprobantePdf) => {
   if (!rutaComprobantePdf) return null;
@@ -45,7 +46,7 @@ export default function DeclaracionPequenoContribuyenteForm({ isOpen, clientes =
     datosIniciales?.declaracionExistente?.observacionesBitacora || ''
   );
   const [fechaPresentacion, setFechaPresentacion] = useState(
-    datosIniciales?.declaracionExistente?.fechaPresentacion || new Date().toISOString().split('T')[0]
+    datosIniciales?.declaracionExistente?.fechaPresentacion || obtenerFechaLocal()
   );
   const [rutaComprobantePdf, setRutaComprobantePdf] = useState(
     datosIniciales?.declaracionExistente?.rutaComprobantePdf || ''
@@ -75,14 +76,14 @@ export default function DeclaracionPequenoContribuyenteForm({ isOpen, clientes =
       setEstadoSemaforo(datosIniciales.declaracionExistente.estadoSemaforo || 'PRESENTADO');
       setObservaciones(datosIniciales.declaracionExistente.observacionesBitacora || '');
       setFechaPresentacion(
-        datosIniciales.declaracionExistente.fechaPresentacion || new Date().toISOString().split('T')[0]
+        datosIniciales.declaracionExistente.fechaPresentacion || obtenerFechaLocal()
       );
       setRutaComprobantePdf(datosIniciales.declaracionExistente.rutaComprobantePdf || '');
     } else {
       setNumeroFormularioSat('');
       setEstadoSemaforo('PRESENTADO');
       setObservaciones('');
-      setFechaPresentacion(new Date().toISOString().split('T')[0]);
+      setFechaPresentacion(obtenerFechaLocal());
       setRutaComprobantePdf('');
     }
     setArchivoPdf(null); 

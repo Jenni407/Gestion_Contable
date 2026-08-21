@@ -6,6 +6,7 @@ import com.oficinacontable.gestionClientes.model.Cliente;
 import com.oficinacontable.gestionClientes.model.Credencial;
 import com.oficinacontable.gestionClientes.repository.ClienteRepository;
 import com.oficinacontable.gestionClientes.repository.CredencialRepository;
+import com.oficinacontable.gestionClientes.service.EventoService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -28,6 +29,9 @@ class CredencialControllerTest {
 
     @Mock
     private ClienteRepository clienteRepository;
+
+    @Mock
+    private EventoService eventoService;
 
     @InjectMocks
     private CredencialController credencialController;

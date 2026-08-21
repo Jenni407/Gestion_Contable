@@ -57,7 +57,10 @@ public class SecurityConfig {
                 // ACCESO PÚBLICO PARA CLIENTES Y DECLARACIONES
                 .requestMatchers(HttpMethod.GET, "/api/clientes/publico/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/declaraciones/publico/**").permitAll() 
-                
+
+                // Handshake de WebSocket (solo notificaciones de cambio, sin datos sensibles)
+                .requestMatchers("/ws/**").permitAll()
+
                 // Endpoints restringidos a roles administrativos
                 .requestMatchers(HttpMethod.GET, "/api/usuarios").hasRole("ADMINISTRADOR")
                 .requestMatchers(HttpMethod.PUT, "/api/usuarios/**").hasRole("ADMINISTRADOR")
