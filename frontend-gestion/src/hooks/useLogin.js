@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import api, { UsuariosAPI, setAuthToken } from '../api/axiosConfig';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 export function useLogin(onLoginSuccess) {
   // Vistas principales
@@ -203,7 +204,11 @@ export function useLogin(onLoginSuccess) {
 };
 
   const handleSocialLogin = (provider) => {
-    alert(`La autenticación con ${provider} requiere configuración de OAuth en Spring Boot.`);
+    Swal.fire({
+      icon: 'info',
+      title: 'No disponible',
+      text: `La autenticación con ${provider} requiere configuración de OAuth en el servidor.`
+    });
   };
 
   return {

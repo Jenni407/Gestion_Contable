@@ -221,7 +221,8 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  max-height: 90vh; /* Permite controlar el alto respecto a la pantalla */
+  max-height: calc(100vh - 40px); /* Permite controlar el alto respecto a la pantalla */
+  max-height: calc(100dvh - 40px); /* dvh respeta la barra del navegador en móviles */
   overflow-y: auto;  /* Activa la barra de desplazamiento si el contenido sobrepasa */
 }
 

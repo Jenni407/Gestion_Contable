@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../api/axiosConfig';
 import { EditIcon, UserPlusIcon, CloseIcon } from '../icons/Icons';
 import Boton from '../ui/Boton';
+import Swal from 'sweetalert2';
 
 export default function UsuarioFormModal({ usuarioEditar, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -58,17 +59,17 @@ export default function UsuarioFormModal({ usuarioEditar, onClose, onSuccess }) 
         };
 
         await api.put(`/usuarios/${id}`, payload);
-        alert('Usuario actualizado correctamente');
+        await Swal.fire('Usuario actualizado', 'Los datos del usuario se guardaron correctamente.', 'success');
       } else {
         await api.post('/usuarios', formData);
-        alert('Usuario registrado correctamente');
+        await Swal.fire('Usuario registrado', 'El usuario se creó correctamente.', 'success');
       }
 
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
       console.error('Error al guardar usuario:', err);
-      alert('Ocurrió un error al procesar la solicitud');
+      Swal.fire('Error', 'Ocurrió un error al procesar la solicitud.', 'error');
     } finally {
       setCargando(false);
     }

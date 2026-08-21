@@ -4,6 +4,7 @@ import UsuarioFormModal from '../../components/forms/UsuarioForm';
 import Boton from '../../components/ui/Boton';
 import { PlusIcon } from '../../components/icons/Icons';
 import Paginador from '../../components/common/Paginador';
+import Swal from 'sweetalert2';
 
 export default function UsuariosList() {
   const [usuarios, setUsuarios] = useState([]);
@@ -47,7 +48,7 @@ export default function UsuariosList() {
       cargarUsuarios();
     } catch (err) {
       console.error('Error al cambiar el estado:', err);
-      alert('No se pudo modificar el estado del usuario');
+      Swal.fire('Error', 'No se pudo modificar el estado del usuario.', 'error');
     }
   };
 

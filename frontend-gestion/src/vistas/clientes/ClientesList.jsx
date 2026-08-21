@@ -6,6 +6,7 @@ import Boton from '../../components/ui/Boton';
 import { PlusIcon } from '../../components/icons/Icons';
 import Paginador from '../../components/common/Paginador';
 import { formatearFecha } from '../../utils/fecha';
+import Swal from 'sweetalert2';
 
 export default function ClientesList() {
   const [clientes, setClientes] = useState([]);
@@ -52,7 +53,7 @@ export default function ClientesList() {
       cargarClientes();
     } catch (err) {
       console.error('Error al cambiar el estado del cliente:', err);
-      alert('No se pudo modificar el estado');
+      Swal.fire('Error', 'No se pudo modificar el estado del cliente.', 'error');
     }
   };
 

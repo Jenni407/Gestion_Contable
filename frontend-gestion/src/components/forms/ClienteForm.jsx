@@ -7,6 +7,7 @@ import {
   CheckSquareIcon 
 } from '../icons/Icons';
 import Boton from '../ui/Boton';
+import Swal from 'sweetalert2';
 
 const INITIAL_STATE = {
   nit: '',
@@ -89,7 +90,7 @@ export default function ClienteFormModal({ clienteEditar, onClose, onSuccess }) 
 
     // Validación previa al envío
     if (formData.telefono && formData.telefono.length < 8) {
-      alert('El número de teléfono debe tener exactamente 8 dígitos.');
+      Swal.fire('Teléfono incompleto', 'El número de teléfono debe tener exactamente 8 dígitos.', 'warning');
       return;
     }
 
@@ -104,17 +105,17 @@ export default function ClienteFormModal({ clienteEditar, onClose, onSuccess }) 
     try {
       if (clienteEditar) {
         await api.put(`/clientes/${id}`, payload);
-        alert('Cliente actualizado correctamente');
+        await Swal.fire('Cliente actualizado', 'Los datos del cliente se guardaron correctamente.', 'success');
       } else {
         await api.post('/clientes', payload);
-        alert('Cliente registrado correctamente');
+        await Swal.fire('Cliente registrado', 'El cliente se creó correctamente.', 'success');
       }
 
       if (onSuccess) await onSuccess();
       onClose();
     } catch (err) {
       console.error('Error al guardar cliente:', err);
-      alert('Ocurrió un error al procesar el cliente.');
+      Swal.fire('Error', 'Ocurrió un error al procesar el cliente.', 'error');
     } finally {
       setCargando(false);
     }

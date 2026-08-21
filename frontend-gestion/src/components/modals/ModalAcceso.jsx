@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, KeyRound, Plus, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
+import Swal from 'sweetalert2';
 import { useModalAccesos } from '../../hooks/useModalAcceso';
 import './modalacceso.css';
 
@@ -42,7 +43,11 @@ export default function ModalAccesos({ cliente, onClose }) {
   const handleGuardar = async (e) => {
     e.preventDefault();
     if (!form.datos.servicio?.trim()) {
-      alert('El servicio es obligatorio');
+      Swal.fire('Campo requerido', 'El servicio es obligatorio.', 'warning');
+      return;
+    }
+    if (!form.id && !form.datos.password) {
+      Swal.fire('Campo requerido', 'La contraseña es obligatoria para una credencial nueva.', 'warning');
       return;
     }
     setGuardando(true);
@@ -53,19 +58,30 @@ export default function ModalAccesos({ cliente, onClose }) {
       cerrarForm();
     } catch (err) {
       console.error('Error al guardar credencial:', err);
-      alert('No se pudo guardar la credencial');
+      Swal.fire('Error', 'No se pudo guardar la credencial.', 'error');
     } finally {
       setGuardando(false);
     }
   };
 
   const handleEliminar = async (id) => {
-    if (!window.confirm('¿Eliminar esta credencial?')) return;
+    const resultado = await Swal.fire({
+      title: '¿Eliminar credencial?',
+      text: 'Esta acción no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b'
+    });
+    if (!resultado.isConfirmed) return;
     try {
       await eliminar(id);
+      Swal.fire('Eliminada', 'La credencial fue eliminada correctamente.', 'success');
     } catch (err) {
       console.error('Error al eliminar credencial:', err);
-      alert('No se pudo eliminar la credencial');
+      Swal.fire('Error', 'No se pudo eliminar la credencial.', 'error');
     }
   };
 
@@ -86,7 +102,7 @@ export default function ModalAccesos({ cliente, onClose }) {
 
         <div className="modal-body">
           {form ? (
-            <form onSubmit={handleGuardar} className="credential-form">
+            <form onSubmit={handleGuardar} className="credential-form" noValidate>
               <h4>{form.id ? 'Editar credencial' : 'Nueva credencial'}</h4>
 
               <div className="form-group">
